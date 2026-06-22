@@ -105,12 +105,17 @@ Reglas para escribir queries de escritura sin romper builds:
 Ambos apuntan al mismo repo, con Root Directory distinto.
 
 ### API — proyecto con Root Directory = `apps/api`
-- Adaptador `hono/vercel`: `apps/api/api/index.ts` exporta `handle(app)` (runtime nodejs).
-- `apps/api/src/app.ts` define la app; `apps/api/src/index.ts` es solo el server local.
+- **La función se BUNDLEA con esbuild** (NO se deja que `@vercel/node` la arme). Razón:
+  `@suites/db` y `@suites/shared` son TS sin compilar; Vercel los trataba como módulos
+  externos y tiraba `ERR_MODULE_NOT_FOUND` en runtime. El bundle inlinea todo.
+  - `apps/api/src/vercel-entry.ts` = fuente del handler (`export default handle(app)`).
+  - `pnpm build:vercel` (esbuild) → genera `apps/api/api/index.js` autocontenida.
+    Ese `api/` está en `.gitignore` (artefacto de build).
+  - `apps/api/src/app.ts` define la app; `apps/api/src/index.ts` es solo el server local.
 - `apps/api/vercel.json` (config que costó y FUNCIONA):
   - `framework: null` → evita que un preset corra `tsc` (causa de la degradación de tipos).
-  - `buildCommand`: crea un `public/index.html` mínimo (Vercel exige output dir no vacío
-    aunque la API son funciones).
+  - `buildCommand`: crea `public/index.html` (output dir no vacío) **y corre
+    `pnpm build:vercel`** (el bundle esbuild).
   - `outputDirectory: public`.
   - `rewrites: /(.*) -> /api` → todo entra a la función; Hono enruta por el path original.
 - Env: la integración de Neon inyecta `DATABASE_URL` y `DATABASE_URL_UNPOOLED`.
