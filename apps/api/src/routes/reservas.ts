@@ -160,9 +160,15 @@ reservasRoutes.patch("/:id", zValidator("json", reservaUpdate), async (c) => {
 // Check-in
 reservasRoutes.post("/:id/checkin", async (c) => {
   const id = Number(c.req.param("id"));
+  // Payload como variable (no objeto literal) a propósito: la inferencia de
+  // tipos de Drizzle sobre la tabla puede degradarse en algunos entornos de
+  // build (p.ej. Vercel) y disparar un falso "excess property" sobre el
+  // literal. Con una variable se chequea por asignabilidad estructural y el
+  // runtime es idéntico.
+  const cambios = { estado: "ocupada" as const, checkinAt: new Date() };
   const [row] = await db
     .update(reservas)
-    .set({ estado: "ocupada", checkinAt: new Date() })
+    .set(cambios)
     .where(eq(reservas.id, id))
     .returning();
   if (!row) return c.json({ error: "No encontrada" }, 404);
@@ -172,9 +178,10 @@ reservasRoutes.post("/:id/checkin", async (c) => {
 // Check-out
 reservasRoutes.post("/:id/checkout", async (c) => {
   const id = Number(c.req.param("id"));
+  const cambios = { estado: "checkout" as const, checkoutAt: new Date() };
   const [row] = await db
     .update(reservas)
-    .set({ estado: "checkout", checkoutAt: new Date() })
+    .set(cambios)
     .where(eq(reservas.id, id))
     .returning();
   if (!row) return c.json({ error: "No encontrada" }, 404);
@@ -184,9 +191,10 @@ reservasRoutes.post("/:id/checkout", async (c) => {
 // Cancelar
 reservasRoutes.post("/:id/cancelar", async (c) => {
   const id = Number(c.req.param("id"));
+  const cambios = { estado: "cancelada" as const };
   const [row] = await db
     .update(reservas)
-    .set({ estado: "cancelada" })
+    .set(cambios)
     .where(eq(reservas.id, id))
     .returning();
   if (!row) return c.json({ error: "No encontrada" }, 404);
