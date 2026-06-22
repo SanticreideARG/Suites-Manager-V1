@@ -4,8 +4,14 @@ import { fileURLToPath } from "node:url";
 
 /**
  * Carga el .env de la RAÍZ del monorepo, sin importar desde qué cwd se ejecute
- * (los scripts corren con cwd en packages/db o apps/api). En Vercel el archivo
- * no existe y las env ya vienen inyectadas: dotenv simplemente no hace nada.
+ * (los scripts corren con cwd en packages/db o apps/api).
+ *
+ * En serverless (Vercel) las env ya vienen inyectadas y puede no haber acceso
+ * a filesystem ni a import.meta.url confiable: si algo falla, se ignora.
  */
-const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "../../..");
-config({ path: join(repoRoot, ".env") });
+try {
+  const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "../../..");
+  config({ path: join(repoRoot, ".env") });
+} catch {
+  // Sin .env local: las variables ya están en el entorno.
+}

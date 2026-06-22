@@ -7,7 +7,7 @@ import {
   lt,
   ne,
   db,
-  pool,
+  sql,
   habitaciones,
   huespedes,
   reservas,
@@ -70,53 +70,38 @@ reservasRoutes.post("/", zValidator("json", reservaCreate), async (c) => {
 
   const total = noches(data.checkin, data.checkout) * Number(hab.tarifaBase);
 
-  // Transacción: crear huésped + reserva. Si la reserva pisa fechas, el
-  // EXCLUDE constraint aborta todo y devolvemos 409.
-  const client = await pool.connect();
+  // Alta de huésped + reserva en UNA sola sentencia (CTE), por lo tanto
+  // atómica sin necesidad de transacción interactiva (que el driver HTTP no
+  // soporta). Si la reserva pisa fechas, el EXCLUDE aborta toda la sentencia
+  // (incluido el alta del huésped) → devolvemos 409.
+  const h = data.huesped;
   try {
-    await client.query("BEGIN");
-    const huespedRes = await client.query<{ id: number }>(
-      `INSERT INTO huespedes (nombre, documento, email, telefono)
-       VALUES ($1,$2,$3,$4) RETURNING id`,
-      [
-        data.huesped.nombre,
-        data.huesped.documento ?? null,
-        data.huesped.email ?? null,
-        data.huesped.telefono ?? null,
-      ],
-    );
-    const huespedId = huespedRes.rows[0]!.id;
-
-    const reservaRes = await client.query(
-      `INSERT INTO reservas
-         (habitacion_id, huesped_id, checkin, checkout, total, notas)
-       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
-      [
-        data.habitacionId,
-        huespedId,
-        data.checkin,
-        data.checkout,
-        total,
-        data.notas ?? null,
-      ],
-    );
-    await client.query("COMMIT");
-    return c.json(reservaRes.rows[0], 201);
+    const rows = (await sql`
+      WITH nuevo_huesped AS (
+        INSERT INTO huespedes (nombre, documento, email, telefono, notas)
+        VALUES (${h.nombre}, ${h.documento ?? null}, ${h.email ?? null},
+                ${h.telefono ?? null}, ${h.notas ?? null})
+        RETURNING id
+      )
+      INSERT INTO reservas
+        (habitacion_id, huesped_id, checkin, checkout, total, notas)
+      SELECT ${data.habitacionId}, nuevo_huesped.id, ${data.checkin},
+             ${data.checkout}, ${total}, ${data.notas ?? null}
+      FROM nuevo_huesped
+      RETURNING *;
+    `) as unknown[];
+    return c.json(rows[0], 201);
   } catch (err) {
-    await client.query("ROLLBACK");
     if (esViolacionOverbooking(err)) {
       return c.json(
         {
           error: "overbooking",
-          message:
-            "Esas fechas ya están ocupadas para esta habitación.",
+          message: "Esas fechas ya están ocupadas para esta habitación.",
         },
         409,
       );
     }
     throw err;
-  } finally {
-    client.release();
   }
 });
 
