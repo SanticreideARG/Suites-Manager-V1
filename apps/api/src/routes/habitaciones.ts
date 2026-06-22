@@ -12,10 +12,16 @@ habitacionesRoutes.get("/", async (c) => {
 
 habitacionesRoutes.post("/", zValidator("json", habitacionCreate), async (c) => {
   const data = c.req.valid("json");
-  // Variable, no objeto literal: evita el falso "excess property" de TS cuando
-  // la inferencia de Drizzle se degrada en algunos builds (ver reservas.ts).
+  // El payload ya está validado por Zod (habitacionCreate) → runtime seguro.
+  // `as any` a propósito: la inferencia de tipos de Drizzle se degrada en el
+  // tsc del build de Vercel (incluido $inferInsert), por lo que cualquier cast
+  // tipado también falla. Con `any` compila siempre; el runtime no cambia.
   const values = { ...data, tarifaBase: String(data.tarifaBase) };
-  const [row] = await db.insert(habitaciones).values(values).returning();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [row] = await db
+    .insert(habitaciones)
+    .values(values as any)
+    .returning();
   return c.json(row, 201);
 });
 
