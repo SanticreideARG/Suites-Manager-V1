@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { db, habitaciones } from "./index.js";
 
 /** Carga unas habitaciones de ejemplo para probar el planner. */
