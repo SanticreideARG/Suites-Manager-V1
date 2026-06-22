@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:vercel": "esbuild src/vercel-entry.ts --bundle --platform=node --format=esm --outfile=api/index.js"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.7",
@@ -19,6 +20,7 @@
   "devDependencies": {
     "@types/node": "^22.10.5",
     "dotenv": "^16.4.7",
+    "esbuild": "^0.24.2",
     "tsx": "^4.19.2"
   }
 }

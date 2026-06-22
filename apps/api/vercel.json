@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "buildCommand": "mkdir -p public && echo '<!doctype html><meta charset=utf-8><title>Suites Manager API</title><h1>Suites Manager API</h1><p>OK. Probá <a href=/health>/health</a>.</p>' > public/index.html",
+  "buildCommand": "mkdir -p public && echo '<!doctype html><meta charset=utf-8><title>Suites Manager API</title><h1>Suites Manager API</h1><p>OK. Probá <a href=/health>/health</a>.</p>' > public/index.html && pnpm build:vercel",
   "outputDirectory": "public",
   "rewrites": [{ "source": "/(.*)", "destination": "/api" }]
 }
