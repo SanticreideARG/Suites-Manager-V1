@@ -105,19 +105,30 @@ Reglas para escribir queries de escritura sin romper builds:
 Ambos apuntan al mismo repo, con Root Directory distinto.
 
 ### API — proyecto con Root Directory = `apps/api`
-- **La función se BUNDLEA con esbuild** (NO se deja que `@vercel/node` la arme). Razón:
-  `@suites/db` y `@suites/shared` son TS sin compilar; Vercel los trataba como módulos
-  externos y tiraba `ERR_MODULE_NOT_FOUND` en runtime. El bundle inlinea todo.
-  - `apps/api/src/vercel-entry.ts` = fuente del handler (`export default handle(app)`).
-  - `pnpm build:vercel` (esbuild) → genera `apps/api/api/index.js` autocontenida.
-    Ese `api/` está en `.gitignore` (artefacto de build).
-  - `apps/api/src/app.ts` define la app; `apps/api/src/index.ts` es solo el server local.
-- `apps/api/vercel.json` (config que costó y FUNCIONA):
-  - `framework: null` → evita que un preset corra `tsc` (causa de la degradación de tipos).
-  - `buildCommand`: crea `public/index.html` (output dir no vacío) **y corre
-    `pnpm build:vercel`** (el bundle esbuild).
-  - `outputDirectory: public`.
-  - `rewrites: /(.*) -> /api` → todo entra a la función; Hono enruta por el path original.
+Se despliega con la **Build Output API de Vercel** (`.vercel/output/`). Es la forma sin
+ambigüedad: el build declara explícitamente la función y las rutas, y Vercel despliega
+eso tal cual (no depende de autodetectar `api/`, ni de hybrid estático-vs-función).
+
+Por qué NO los enfoques previos (todos fallaron, en orden):
+1. `@vercel/node` nativo sobre `api/index.ts` → `tsc` del preset degradaba tipos de
+   Drizzle (TS2353); además `@suites/db`/`@suites/shared` son TS sin compilar →
+   `ERR_MODULE_NOT_FOUND` en runtime.
+2. Bundle esbuild a `api/index.js` gitignoreado → Vercel no registraba la función
+   (no estaba en el árbol fuente) → el rewrite caía al `index.html` estático
+   (todas las rutas devolvían HTML, nunca JSON).
+
+Setup actual (FUNCIONA):
+- `apps/api/src/vercel-entry.ts`: handler Node vía `getRequestListener(app.fetch)`.
+- `apps/api/scripts/build-vercel.mjs` (corre en `pnpm build:vercel`): bundlea con esbuild
+  (autocontenido, inlinea workspace deps) y escribe `.vercel/output/`:
+  - `functions/api.func/index.js` + `package.json` (`type: module`) + `.vc-config.json`
+    (`runtime: nodejs20.x`, `launcherType: Nodejs`).
+  - `config.json` con `routes: [{ src: "/(.*)", dest: "/api" }]`.
+  - `static/index.html` (no se sirve; todo va a `/api`).
+- `apps/api/vercel.json`: solo `framework: null` + `buildCommand: pnpm build:vercel`.
+  (Sin `outputDirectory` ni `rewrites`: van en el Build Output.)
+- `.vercel/` está en `.gitignore` (artefacto de build).
+- `apps/api/src/app.ts` define la app; `apps/api/src/index.ts` es solo el server local.
 - Env: la integración de Neon inyecta `DATABASE_URL` y `DATABASE_URL_UNPOOLED`.
   **Sin prefijo** de variable (el código lee los nombres estándar).
 
