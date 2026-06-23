@@ -39,6 +39,26 @@ export interface HistorialItem {
   total: string;
 }
 
+export interface TarifaRegla {
+  id: number;
+  nombre: string;
+  tipo: "rango" | "finde";
+  desde: string | null;
+  hasta: string | null;
+  factor: string;
+  prioridad: number;
+  activa: boolean;
+}
+
+export interface Cotizacion {
+  habitacionId: number;
+  checkin: string;
+  checkout: string;
+  noches: number;
+  tarifaBase: number;
+  total: number;
+}
+
 export interface ReporteResumen {
   periodo: { desde: string; hasta: string; dias: number };
   ocupacionPct: number;
@@ -96,9 +116,25 @@ export interface ApiClient {
   reportes: {
     resumen: (desde: string, hasta: string) => Promise<ReporteResumen>;
   };
+  tarifas: {
+    list: () => Promise<TarifaRegla[]>;
+    create: (
+      data: import("@suites/shared").TarifaReglaCreate,
+    ) => Promise<TarifaRegla>;
+    update: (
+      id: number,
+      data: import("@suites/shared").TarifaReglaUpdate,
+    ) => Promise<TarifaRegla>;
+    remove: (id: number) => Promise<{ ok: true }>;
+  };
   reservas: {
     list: (desde?: string, hasta?: string) => Promise<ReservaListItem[]>;
     create: (data: import("@suites/shared").ReservaCreate) => Promise<unknown>;
+    cotizar: (
+      habitacionId: number,
+      checkin: string,
+      checkout: string,
+    ) => Promise<Cotizacion>;
     mantenimiento: (
       data: import("@suites/shared").BloqueoCreate,
     ) => Promise<unknown>;

@@ -6,6 +6,8 @@ import type {
   ReservaCreate,
   ReservaUpdate,
   BloqueoCreate,
+  TarifaReglaCreate,
+  TarifaReglaUpdate,
 } from "@suites/shared";
 import type {
   ApiClient,
@@ -14,13 +16,23 @@ import type {
   HistorialItem,
   ReservaListItem,
   ReporteResumen,
+  TarifaRegla,
+  Cotizacion,
 } from "./types.js";
 import { ApiError } from "./types.js";
 import { mockApi } from "./mockApi.js";
 
 // Re-export para no romper imports existentes (`from "../lib/api.js"`).
 export { ApiError };
-export type { Habitacion, Huesped, HistorialItem, ReservaListItem };
+export type {
+  Habitacion,
+  Huesped,
+  HistorialItem,
+  ReservaListItem,
+  TarifaRegla,
+  Cotizacion,
+  ReporteResumen,
+};
 
 const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 const USE_MOCK = import.meta.env.VITE_MOCK === "1";
@@ -76,6 +88,21 @@ const realApi: ApiClient = {
         `/reportes/resumen?desde=${desde}&hasta=${hasta}`,
       ),
   },
+  tarifas: {
+    list: () => request<TarifaRegla[]>("/tarifas"),
+    create: (data: TarifaReglaCreate) =>
+      request<TarifaRegla>("/tarifas", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    update: (id: number, data: TarifaReglaUpdate) =>
+      request<TarifaRegla>(`/tarifas/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
+    remove: (id: number) =>
+      request<{ ok: true }>(`/tarifas/${id}`, { method: "DELETE" }),
+  },
   reservas: {
     list: (desde?: string, hasta?: string) => {
       const qs = new URLSearchParams();
@@ -88,6 +115,10 @@ const realApi: ApiClient = {
         method: "POST",
         body: JSON.stringify(data),
       }),
+    cotizar: (habitacionId: number, checkin: string, checkout: string) =>
+      request<Cotizacion>(
+        `/reservas/cotizar?habitacionId=${habitacionId}&checkin=${checkin}&checkout=${checkout}`,
+      ),
     mantenimiento: (data: BloqueoCreate) =>
       request<unknown>("/reservas/mantenimiento", {
         method: "POST",

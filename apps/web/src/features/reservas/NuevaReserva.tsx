@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "../../lib/api.js";
 import { addDays } from "../../lib/fechas.js";
 import { Modal } from "../habitaciones/NuevaHabitacion.js";
@@ -47,6 +47,13 @@ export function NuevaReserva({ habitacionId, fechaInicial, onClose }: Props) {
           : "No se pudo guardar.",
       );
     },
+  });
+
+  // Cotización en vivo (tarifas dinámicas) para reservas de huésped.
+  const cotizacionQ = useQuery({
+    queryKey: ["cotizar", habitacionId, checkin, checkout],
+    queryFn: () => api.reservas.cotizar(habitacionId, checkin, checkout),
+    enabled: tipo === "reserva" && checkout > checkin,
   });
 
   const input = "mt-1 w-full rounded border border-slate-300 px-2 py-1.5";
@@ -114,6 +121,17 @@ export function NuevaReserva({ habitacionId, fechaInicial, onClose }: Props) {
           />
         </label>
       </div>
+
+      {tipo === "reserva" && cotizacionQ.data && checkout > checkin && (
+        <div className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm">
+          <span className="text-slate-500">
+            {cotizacionQ.data.noches} noche(s) · tarifas dinámicas
+          </span>
+          <span className="text-base font-bold text-slate-800">
+            ${cotizacionQ.data.total.toLocaleString("es-AR")}
+          </span>
+        </div>
+      )}
 
       {error && <p className="text-sm text-rose-600">{error}</p>}
 

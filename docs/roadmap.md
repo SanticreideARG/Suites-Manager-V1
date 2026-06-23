@@ -78,7 +78,8 @@ Ampliación (🔜/⏳):
 - ✅ Cálculo del total noche-a-noche aplicando la regla de mayor prioridad
   (integrado en alta y edición de reservas). Verificado contra Neon.
 - ✅ CRUD de reglas (`/tarifas`) y cotización (`/reservas/cotizar`).
-- 🔜 **UI** de gestión de reglas (pestaña Tarifas) + cotización en vivo en la reserva.
+- ✅ **UI**: pestaña Tarifas (CRUD de reglas, toggle activa) + cotización en vivo en
+  el alta de reserva (muestra el total con tarifas dinámicas). Verificado en mock.
 - ⏳ Promociones / paquetes (3x2, estadía larga, códigos) — no incluido aún.
 - ⏳ Reglas por habitación/tipo (hoy son globales).
 

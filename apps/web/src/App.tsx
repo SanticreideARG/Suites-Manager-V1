@@ -11,8 +11,9 @@ import { NuevaReserva } from "./features/reservas/NuevaReserva.js";
 import { AccionesReserva } from "./features/reservas/AccionesReserva.js";
 import { HuespedesPage } from "./features/huespedes/HuespedesPage.js";
 import { ReportesPage } from "./features/reportes/ReportesPage.js";
+import { TarifasPage } from "./features/tarifas/TarifasPage.js";
 
-type Vista = "calendario" | "huespedes" | "reportes";
+type Vista = "calendario" | "huespedes" | "reportes" | "tarifas";
 
 export function App() {
   const [vista, setVista] = useState<Vista>("calendario");
@@ -37,12 +38,16 @@ export function App() {
           <Tab activa={vista === "reportes"} onClick={() => setVista("reportes")}>
             Reportes
           </Tab>
+          <Tab activa={vista === "tarifas"} onClick={() => setVista("tarifas")}>
+            Tarifas
+          </Tab>
         </nav>
       </header>
 
       {vista === "calendario" && <CalendarioView />}
       {vista === "huespedes" && <HuespedesPage />}
       {vista === "reportes" && <ReportesPage />}
+      {vista === "tarifas" && <TarifasPage />}
     </div>
   );
 }

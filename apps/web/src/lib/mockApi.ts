@@ -4,6 +4,7 @@ import type {
   Huesped,
   ReservaListItem,
   ReporteResumen,
+  TarifaRegla,
 } from "./types.js";
 import { ApiError } from "./types.js";
 import { addDays, diffDays } from "./fechas.js";
@@ -82,6 +83,41 @@ const reservas: ReservaInterna[] = [
 ];
 
 const delay = <T,>(v: T) => new Promise<T>((r) => setTimeout(() => r(v), 150));
+
+// ---- Tarifas dinámicas (mock) ----
+let seqRegla = 0;
+const tarifaReglas: TarifaRegla[] = [];
+
+function factorNoche(fecha: string): number {
+  const dow = new Date(fecha + "T00:00:00Z").getUTCDay();
+  const esFinde = dow === 0 || dow === 6;
+  let mejor: TarifaRegla | null = null;
+  for (const r of tarifaReglas) {
+    if (!r.activa) continue;
+    const aplica =
+      (r.tipo === "finde" && esFinde) ||
+      (r.tipo === "rango" &&
+        r.desde != null &&
+        r.hasta != null &&
+        fecha >= r.desde &&
+        fecha < r.hasta);
+    if (!aplica) continue;
+    if (
+      !mejor ||
+      r.prioridad > mejor.prioridad ||
+      (r.prioridad === mejor.prioridad && Number(r.factor) > Number(mejor.factor))
+    ) {
+      mejor = r;
+    }
+  }
+  return mejor ? Number(mejor.factor) : 1;
+}
+
+function totalConReglas(base: number, ci: string, co: string): number {
+  let total = 0;
+  for (let d = ci; d < co; d = addDays(d, 1)) total += base * factorNoche(d);
+  return Math.round(total * 100) / 100;
+}
 
 function seSolapan(
   habitacionId: number,
@@ -189,6 +225,41 @@ export const mockApi: ApiClient = {
           })),
       ),
   },
+  tarifas: {
+    list: () =>
+      delay([...tarifaReglas].sort((a, b) => b.prioridad - a.prioridad)),
+    create: (data) => {
+      const r: TarifaRegla = {
+        id: ++seqRegla,
+        nombre: data.nombre,
+        tipo: data.tipo,
+        desde: data.desde ?? null,
+        hasta: data.hasta ?? null,
+        factor: String(data.factor),
+        prioridad: data.prioridad ?? 0,
+        activa: data.activa ?? true,
+      };
+      tarifaReglas.push(r);
+      return delay(r);
+    },
+    update: (id, data) => {
+      const r = tarifaReglas.find((x) => x.id === id);
+      if (!r) return Promise.reject(new ApiError(404, "No encontrada"));
+      if (data.nombre !== undefined) r.nombre = data.nombre;
+      if (data.tipo !== undefined) r.tipo = data.tipo;
+      if (data.desde !== undefined) r.desde = data.desde ?? null;
+      if (data.hasta !== undefined) r.hasta = data.hasta ?? null;
+      if (data.factor !== undefined) r.factor = String(data.factor);
+      if (data.prioridad !== undefined) r.prioridad = data.prioridad;
+      if (data.activa !== undefined) r.activa = data.activa;
+      return delay(r);
+    },
+    remove: (id) => {
+      const i = tarifaReglas.findIndex((x) => x.id === id);
+      if (i >= 0) tarifaReglas.splice(i, 1);
+      return delay({ ok: true } as const);
+    },
+  },
   reportes: {
     resumen: (desde, hasta) => {
       const dias = Math.max(1, diffDays(desde, hasta));
@@ -289,8 +360,25 @@ export const mockApi: ApiClient = {
         data.checkout,
         "reservada",
       );
+      // Total con tarifas dinámicas (igual que la API real).
+      const hab = habitaciones.find((h) => h.id === data.habitacionId)!;
+      r.total = String(
+        totalConReglas(Number(hab.tarifaBase), data.checkin, data.checkout),
+      );
       reservas.push(r);
       return delay(r);
+    },
+    cotizar: (habitacionId, checkin, checkout) => {
+      const hab = habitaciones.find((h) => h.id === habitacionId);
+      const base = Number(hab?.tarifaBase ?? 0);
+      return delay({
+        habitacionId,
+        checkin,
+        checkout,
+        noches: diffDays(checkin, checkout),
+        tarifaBase: base,
+        total: totalConReglas(base, checkin, checkout),
+      });
     },
     mantenimiento: (data) => {
       if (seSolapan(data.habitacionId, data.checkin, data.checkout)) {
