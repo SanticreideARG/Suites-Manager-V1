@@ -39,6 +39,21 @@ export interface HistorialItem {
   total: string;
 }
 
+export interface ReporteResumen {
+  periodo: { desde: string; hasta: string; dias: number };
+  ocupacionPct: number;
+  nochesOcupadas: number;
+  ingresos: number;
+  reservas: number;
+  porHabitacion: {
+    habitacion: string;
+    reservas: number;
+    noches: number;
+    ingresos: number;
+  }[];
+  frecuentes: { huesped: string; estadias: number; total: number }[];
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -77,6 +92,9 @@ export interface ApiClient {
     ) => Promise<Huesped>;
     remove: (id: number) => Promise<{ ok: true }>;
     historial: (id: number) => Promise<HistorialItem[]>;
+  };
+  reportes: {
+    resumen: (desde: string, hasta: string) => Promise<ReporteResumen>;
   };
   reservas: {
     list: (desde?: string, hasta?: string) => Promise<ReservaListItem[]>;

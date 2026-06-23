@@ -10,8 +10,9 @@ import { EditarHabitacion } from "./features/habitaciones/EditarHabitacion.js";
 import { NuevaReserva } from "./features/reservas/NuevaReserva.js";
 import { AccionesReserva } from "./features/reservas/AccionesReserva.js";
 import { HuespedesPage } from "./features/huespedes/HuespedesPage.js";
+import { ReportesPage } from "./features/reportes/ReportesPage.js";
 
-type Vista = "calendario" | "huespedes";
+type Vista = "calendario" | "huespedes" | "reportes";
 
 export function App() {
   const [vista, setVista] = useState<Vista>("calendario");
@@ -33,10 +34,15 @@ export function App() {
           <Tab activa={vista === "huespedes"} onClick={() => setVista("huespedes")}>
             Huéspedes
           </Tab>
+          <Tab activa={vista === "reportes"} onClick={() => setVista("reportes")}>
+            Reportes
+          </Tab>
         </nav>
       </header>
 
-      {vista === "calendario" ? <CalendarioView /> : <HuespedesPage />}
+      {vista === "calendario" && <CalendarioView />}
+      {vista === "huespedes" && <HuespedesPage />}
+      {vista === "reportes" && <ReportesPage />}
     </div>
   );
 }

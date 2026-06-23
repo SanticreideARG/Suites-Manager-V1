@@ -77,10 +77,12 @@ Ampliación (🔜/⏳):
 - Promociones / paquetes (3x2, estadía larga, códigos de descuento).
 - Cálculo del total de la reserva considerando estas reglas (hoy: noches × base).
 
-### Reportes — ⏳
-- Ocupación por período.
-- Ingresos por habitación / servicio.
-- Ranking de huéspedes frecuentes.
+### Reportes — ✅ base hecha
+- ✅ Ocupación por período (noches de huéspedes / capacidad).
+- ✅ Ingresos del período + ✅ ingresos/noches/reservas por habitación.
+- ✅ Ranking de huéspedes frecuentes (histórico).
+- ⏳ Ingresos por servicio (depende de consumos extras), export del reporte.
+- Endpoint `GET /reportes/resumen?desde&hasta`; pestaña "Reportes" en la web.
 
 ### Roles de usuario — ⏳
 - Administrador / recepcionista. Auth (Better Auth o Clerk).

@@ -3,6 +3,7 @@ import type {
   Habitacion,
   Huesped,
   ReservaListItem,
+  ReporteResumen,
 } from "./types.js";
 import { ApiError } from "./types.js";
 import { addDays, diffDays } from "./fechas.js";
@@ -187,6 +188,74 @@ export const mockApi: ApiClient = {
             total: r.total,
           })),
       ),
+  },
+  reportes: {
+    resumen: (desde, hasta) => {
+      const dias = Math.max(1, diffDays(desde, hasta));
+      const activos = reservas.filter(
+        (r) => r.estado !== "cancelada" && r.estado !== "mantenimiento",
+      );
+      const overlap = (ci: string, co: string) => {
+        const start = ci > desde ? ci : desde;
+        const end = co < hasta ? co : hasta;
+        const d = diffDays(start, end);
+        return d > 0 ? d : 0;
+      };
+      const nochesOcupadas = activos.reduce(
+        (acc, r) => acc + overlap(r.checkin, r.checkout),
+        0,
+      );
+      const delPeriodo = activos.filter(
+        (r) => r.checkin >= desde && r.checkin < hasta,
+      );
+      const ingresos = delPeriodo.reduce((acc, r) => acc + Number(r.total), 0);
+
+      const porHabitacion = habitaciones
+        .map((h) => {
+          const rs = delPeriodo.filter((r) => r.habitacionId === h.id);
+          return {
+            habitacion: h.nombre,
+            reservas: rs.length,
+            noches: rs.reduce((a, r) => a + diffDays(r.checkin, r.checkout), 0),
+            ingresos: rs.reduce((a, r) => a + Number(r.total), 0),
+          };
+        })
+        .sort((a, b) => b.ingresos - a.ingresos);
+
+      const porHuesped = new Map<number, { estadias: number; total: number }>();
+      for (const r of activos) {
+        if (r.huespedId == null) continue;
+        const acc = porHuesped.get(r.huespedId) ?? { estadias: 0, total: 0 };
+        acc.estadias += 1;
+        acc.total += Number(r.total);
+        porHuesped.set(r.huespedId, acc);
+      }
+      const frecuentes = [...porHuesped.entries()]
+        .map(([id, v]) => ({
+          huesped: huespedes.find((h) => h.id === id)?.nombre ?? "—",
+          estadias: v.estadias,
+          total: v.total,
+        }))
+        .sort((a, b) => b.estadias - a.estadias || b.total - a.total)
+        .slice(0, 5);
+
+      const capacidad = habitaciones.length * dias;
+      const ocupacionPct =
+        capacidad > 0
+          ? Math.round((nochesOcupadas / capacidad) * 1000) / 10
+          : 0;
+
+      const res: ReporteResumen = {
+        periodo: { desde, hasta, dias },
+        ocupacionPct,
+        nochesOcupadas,
+        ingresos,
+        reservas: delPeriodo.length,
+        porHabitacion,
+        frecuentes,
+      };
+      return delay(res);
+    },
   },
   reservas: {
     list: (desde, hasta) =>

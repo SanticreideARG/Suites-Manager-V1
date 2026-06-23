@@ -13,6 +13,7 @@ import type {
   Huesped,
   HistorialItem,
   ReservaListItem,
+  ReporteResumen,
 } from "./types.js";
 import { ApiError } from "./types.js";
 import { mockApi } from "./mockApi.js";
@@ -68,6 +69,12 @@ const realApi: ApiClient = {
       request<{ ok: true }>(`/huespedes/${id}`, { method: "DELETE" }),
     historial: (id: number) =>
       request<HistorialItem[]>(`/huespedes/${id}/historial`),
+  },
+  reportes: {
+    resumen: (desde: string, hasta: string) =>
+      request<ReporteResumen>(
+        `/reportes/resumen?desde=${desde}&hasta=${hasta}`,
+      ),
   },
   reservas: {
     list: (desde?: string, hasta?: string) => {

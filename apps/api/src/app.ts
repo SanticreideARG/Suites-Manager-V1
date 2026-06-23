@@ -4,6 +4,7 @@ import { logger } from "hono/logger";
 import { habitacionesRoutes } from "./routes/habitaciones.js";
 import { reservasRoutes } from "./routes/reservas.js";
 import { huespedesRoutes } from "./routes/huespedes.js";
+import { reportesRoutes } from "./routes/reportes.js";
 
 /** App Hono sin servidor: la consume server.ts (local) y api/index.ts (Vercel). */
 export const app = new Hono();
@@ -17,5 +18,6 @@ app.get("/health", (c) => c.json({ status: "ok" }));
 app.route("/habitaciones", habitacionesRoutes);
 app.route("/reservas", reservasRoutes);
 app.route("/huespedes", huespedesRoutes);
+app.route("/reportes", reportesRoutes);
 
 export default app;
