@@ -85,6 +85,7 @@ export function Planner({
             <button
               onClick={() => onClickHabitacion?.(hab)}
               className="sticky left-0 z-10 flex items-center justify-between border-b border-r border-slate-200 bg-white px-3 py-3 text-left hover:bg-slate-50"
+              style={{ gridColumn: 1, gridRow: 1 }}
             >
               <div>
                 <div className="text-sm font-medium text-slate-800">
@@ -102,14 +103,14 @@ export function Planner({
             </button>
 
             {/* Celdas de fondo (clickeables para crear reserva) */}
-            {fechas.map((f) => (
+            {fechas.map((f, i) => (
               <button
                 key={f}
                 onClick={() => onClickCelda?.(hab.id, f)}
                 className={`h-14 border-b border-r border-slate-100 transition-colors hover:bg-sky-50 ${
                   esFinDeSemana(f) ? "bg-slate-50/60" : ""
                 } ${hab.estado === "mantenimiento" ? "bg-rose-50/50" : ""}`}
-                style={{ gridRow: 1 }}
+                style={{ gridRow: 1, gridColumn: i + 2 }}
               />
             ))}
 
