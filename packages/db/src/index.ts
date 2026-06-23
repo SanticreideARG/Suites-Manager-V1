@@ -23,8 +23,8 @@ export const sql = neon(connectionString);
 export const db = drizzle(sql, { schema });
 
 export * as schema from "./schema.js";
-export { habitaciones, huespedes, reservas, pagos } from "./schema.js";
-export type { Habitacion, Huesped, Reserva, Pago } from "./schema.js";
+export { habitaciones, huespedes, reservas, pagos, tarifaReglas } from "./schema.js";
+export type { Habitacion, Huesped, Reserva, Pago, TarifaRegla } from "./schema.js";
 
 // Operadores de Drizzle (una sola instancia; ver nota en package del repo).
 export { and, desc, eq, gte, lt, ne } from "drizzle-orm";

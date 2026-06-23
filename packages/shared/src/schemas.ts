@@ -21,6 +21,9 @@ export type EstadoReserva = z.infer<typeof estadoReserva>;
 export const metodoPago = z.enum(["efectivo", "transferencia"]);
 export type MetodoPago = z.infer<typeof metodoPago>;
 
+export const tipoTarifa = z.enum(["rango", "finde"]);
+export type TipoTarifa = z.infer<typeof tipoTarifa>;
+
 // Fecha en formato ISO YYYY-MM-DD (la noche de la estadía)
 const fechaISO = z
   .string()
@@ -89,6 +92,34 @@ export const bloqueoCreate = z
     path: ["checkout"],
   });
 export type BloqueoCreate = z.infer<typeof bloqueoCreate>;
+
+// ---------- Tarifas dinámicas ----------
+export const tarifaReglaCreate = z
+  .object({
+    nombre: z.string().min(1).max(120),
+    tipo: tipoTarifa,
+    desde: fechaISO.optional(),
+    hasta: fechaISO.optional(),
+    factor: z.number().positive().max(100),
+    prioridad: z.number().int().min(0).default(0),
+    activa: z.boolean().default(true),
+  })
+  .refine((r) => r.tipo !== "rango" || (r.desde && r.hasta && r.hasta > r.desde), {
+    message: "Para tipo 'rango' se requieren desde y hasta (hasta > desde)",
+    path: ["hasta"],
+  });
+export type TarifaReglaCreate = z.infer<typeof tarifaReglaCreate>;
+
+export const tarifaReglaUpdate = z.object({
+  nombre: z.string().min(1).max(120).optional(),
+  tipo: tipoTarifa.optional(),
+  desde: fechaISO.nullable().optional(),
+  hasta: fechaISO.nullable().optional(),
+  factor: z.number().positive().max(100).optional(),
+  prioridad: z.number().int().min(0).optional(),
+  activa: z.boolean().optional(),
+});
+export type TarifaReglaUpdate = z.infer<typeof tarifaReglaUpdate>;
 
 // ---------- Pagos ----------
 export const pagoCreate = z.object({

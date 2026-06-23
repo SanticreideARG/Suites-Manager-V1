@@ -8,6 +8,7 @@ import {
   date,
   timestamp,
   text,
+  boolean,
   index,
 } from "drizzle-orm/pg-core";
 
@@ -36,6 +37,8 @@ export const metodoPagoEnum = pgEnum("metodo_pago", [
   "efectivo",
   "transferencia",
 ]);
+
+export const tipoTarifaEnum = pgEnum("tipo_tarifa", ["rango", "finde"]);
 
 export const habitaciones = pgTable("habitaciones", {
   id: serial("id").primaryKey(),
@@ -96,7 +99,22 @@ export const pagos = pgTable("pagos", {
   fecha: timestamp("fecha", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const tarifaReglas = pgTable("tarifa_reglas", {
+  id: serial("id").primaryKey(),
+  nombre: varchar("nombre", { length: 120 }).notNull(),
+  tipo: tipoTarifaEnum("tipo").notNull(),
+  desde: date("desde"), // para tipo 'rango'
+  hasta: date("hasta"), // para tipo 'rango' (exclusivo)
+  factor: numeric("factor", { precision: 5, scale: 2 }).notNull().default("1"),
+  prioridad: integer("prioridad").notNull().default(0),
+  activa: boolean("activa").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 export type Habitacion = typeof habitaciones.$inferSelect;
 export type Huesped = typeof huespedes.$inferSelect;
 export type Reserva = typeof reservas.$inferSelect;
 export type Pago = typeof pagos.$inferSelect;
+export type TarifaRegla = typeof tarifaReglas.$inferSelect;

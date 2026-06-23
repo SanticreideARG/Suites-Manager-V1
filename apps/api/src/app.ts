@@ -5,6 +5,7 @@ import { habitacionesRoutes } from "./routes/habitaciones.js";
 import { reservasRoutes } from "./routes/reservas.js";
 import { huespedesRoutes } from "./routes/huespedes.js";
 import { reportesRoutes } from "./routes/reportes.js";
+import { tarifasRoutes } from "./routes/tarifas.js";
 
 /** App Hono sin servidor: la consume server.ts (local) y api/index.ts (Vercel). */
 export const app = new Hono();
@@ -19,5 +20,6 @@ app.route("/habitaciones", habitacionesRoutes);
 app.route("/reservas", reservasRoutes);
 app.route("/huespedes", huespedesRoutes);
 app.route("/reportes", reportesRoutes);
+app.route("/tarifas", tarifasRoutes);
 
 export default app;

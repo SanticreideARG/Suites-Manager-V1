@@ -14,14 +14,9 @@ import {
   PG_EXCLUSION_VIOLATION,
 } from "@suites/db";
 import { reservaCreate, reservaUpdate, bloqueoCreate } from "@suites/shared";
+import { calcularTotal } from "../calcularTarifa.js";
 
 export const reservasRoutes = new Hono();
-
-/** Noches entre dos fechas YYYY-MM-DD. */
-function noches(checkin: string, checkout: string): number {
-  const ms = new Date(checkout).getTime() - new Date(checkin).getTime();
-  return Math.round(ms / 86_400_000);
-}
 
 function esViolacionOverbooking(err: unknown): boolean {
   return (
@@ -69,7 +64,12 @@ reservasRoutes.post("/", zValidator("json", reservaCreate), async (c) => {
     .where(eq(habitaciones.id, data.habitacionId));
   if (!hab) return c.json({ error: "Habitación inexistente" }, 404);
 
-  const total = noches(data.checkin, data.checkout) * Number(hab.tarifaBase);
+  // Total con tarifas dinámicas (suma noche a noche aplicando reglas).
+  const { total } = await calcularTotal(
+    Number(hab.tarifaBase),
+    data.checkin,
+    data.checkout,
+  );
 
   // Alta de huésped + reserva en UNA sola sentencia (CTE), por lo tanto
   // atómica sin necesidad de transacción interactiva (que el driver HTTP no
@@ -140,6 +140,25 @@ reservasRoutes.post(
   },
 );
 
+// Cotización: total estimado de una estadía con tarifas dinámicas (sin reservar).
+reservasRoutes.get("/cotizar", async (c) => {
+  const habitacionId = Number(c.req.query("habitacionId"));
+  const checkin = c.req.query("checkin");
+  const checkout = c.req.query("checkout");
+  if (!habitacionId || !checkin || !checkout || checkout <= checkin) {
+    return c.json({ error: "Parámetros inválidos" }, 400);
+  }
+  const [hab] = await db
+    .select()
+    .from(habitaciones)
+    .where(eq(habitaciones.id, habitacionId));
+  if (!hab) return c.json({ error: "Habitación inexistente" }, 404);
+
+  const tarifaBase = Number(hab.tarifaBase);
+  const { total, noches } = await calcularTotal(tarifaBase, checkin, checkout);
+  return c.json({ habitacionId, checkin, checkout, noches, tarifaBase, total });
+});
+
 reservasRoutes.patch("/:id", zValidator("json", reservaUpdate), async (c) => {
   const id = Number(c.req.param("id"));
   const data = c.req.valid("json");
@@ -159,7 +178,12 @@ reservasRoutes.patch("/:id", zValidator("json", reservaUpdate), async (c) => {
       .select()
       .from(habitaciones)
       .where(eq(habitaciones.id, actual.habitacionId));
-    total = String(noches(checkin, checkout) * Number(hab?.tarifaBase ?? 0));
+    const calc = await calcularTotal(
+      Number(hab?.tarifaBase ?? 0),
+      checkin,
+      checkout,
+    );
+    total = String(calc.total);
   }
 
   try {

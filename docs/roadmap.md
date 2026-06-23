@@ -72,10 +72,15 @@ Ampliación (🔜/⏳):
 > `habitacion_amenities` o una columna `JSONB amenities` en `habitaciones` para
 > no explotar el esquema en columnas. A definir al implementar.
 
-### Tarifas dinámicas — ⏳
-- Tarifa por temporada (alta/baja), fin de semana, feriados.
-- Promociones / paquetes (3x2, estadía larga, códigos de descuento).
-- Cálculo del total de la reserva considerando estas reglas (hoy: noches × base).
+### Tarifas dinámicas — 🔜 backend hecho, falta UI
+- ✅ Reglas de tarifa (tabla `tarifa_reglas`): tipo `rango` (temporada/feriado) y
+  `finde` (sáb/dom), con `factor` (1.5 = +50%, 0.8 = -20%), `prioridad`, `activa`.
+- ✅ Cálculo del total noche-a-noche aplicando la regla de mayor prioridad
+  (integrado en alta y edición de reservas). Verificado contra Neon.
+- ✅ CRUD de reglas (`/tarifas`) y cotización (`/reservas/cotizar`).
+- 🔜 **UI** de gestión de reglas (pestaña Tarifas) + cotización en vivo en la reserva.
+- ⏳ Promociones / paquetes (3x2, estadía larga, códigos) — no incluido aún.
+- ⏳ Reglas por habitación/tipo (hoy son globales).
 
 ### Reportes — ✅ base hecha
 - ✅ Ocupación por período (noches de huéspedes / capacidad).
