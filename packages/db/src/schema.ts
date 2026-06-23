@@ -29,6 +29,7 @@ export const estadoReservaEnum = pgEnum("estado_reserva", [
   "ocupada",
   "checkout",
   "cancelada",
+  "mantenimiento", // bloqueo de mantenimiento programado (sin huésped)
 ]);
 
 export const metodoPagoEnum = pgEnum("metodo_pago", [
@@ -69,9 +70,8 @@ export const reservas = pgTable(
     habitacionId: integer("habitacion_id")
       .notNull()
       .references(() => habitaciones.id),
-    huespedId: integer("huesped_id")
-      .notNull()
-      .references(() => huespedes.id),
+    // NULL para bloqueos de mantenimiento (estado 'mantenimiento').
+    huespedId: integer("huesped_id").references(() => huespedes.id),
     checkin: date("checkin").notNull(), // primera noche
     checkout: date("checkout").notNull(), // día de salida (exclusivo)
     estado: estadoReservaEnum("estado").notNull().default("reservada"),

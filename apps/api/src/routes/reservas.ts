@@ -13,7 +13,7 @@ import {
   reservas,
   PG_EXCLUSION_VIOLATION,
 } from "@suites/db";
-import { reservaCreate, reservaUpdate } from "@suites/shared";
+import { reservaCreate, reservaUpdate, bloqueoCreate } from "@suites/shared";
 
 export const reservasRoutes = new Hono();
 
@@ -52,7 +52,8 @@ reservasRoutes.get("/", async (c) => {
       huesped: huespedes.nombre,
     })
     .from(reservas)
-    .innerJoin(huespedes, eq(reservas.huespedId, huespedes.id))
+    // leftJoin: los bloqueos de mantenimiento no tienen huésped (huesped null).
+    .leftJoin(huespedes, eq(reservas.huespedId, huespedes.id))
     .where(and(...conditions))
     .orderBy(reservas.checkin);
 
@@ -104,6 +105,40 @@ reservasRoutes.post("/", zValidator("json", reservaCreate), async (c) => {
     throw err;
   }
 });
+
+// Bloqueo de mantenimiento: "reserva" sin huésped, estado 'mantenimiento'.
+// El EXCLUDE constraint lo trata igual que una reserva → no puede solapar.
+reservasRoutes.post(
+  "/mantenimiento",
+  zValidator("json", bloqueoCreate),
+  async (c) => {
+    const data = c.req.valid("json");
+    try {
+      const [row] = await db
+        .insert(reservas)
+        .values({
+          habitacionId: data.habitacionId,
+          checkin: data.checkin,
+          checkout: data.checkout,
+          estado: "mantenimiento",
+          notas: data.motivo ?? null,
+        })
+        .returning();
+      return c.json(row, 201);
+    } catch (err) {
+      if (esViolacionOverbooking(err)) {
+        return c.json(
+          {
+            error: "overbooking",
+            message: "Esas fechas ya están ocupadas para esta habitación.",
+          },
+          409,
+        );
+      }
+      throw err;
+    }
+  },
+);
 
 reservasRoutes.patch("/:id", zValidator("json", reservaUpdate), async (c) => {
   const id = Number(c.req.param("id"));

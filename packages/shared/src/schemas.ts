@@ -14,6 +14,7 @@ export const estadoReserva = z.enum([
   "ocupada", // tras check-in
   "checkout", // tras check-out
   "cancelada",
+  "mantenimiento", // bloqueo de mantenimiento programado (sin huésped)
 ]);
 export type EstadoReserva = z.infer<typeof estadoReserva>;
 
@@ -73,6 +74,21 @@ export const reservaUpdate = z.object({
   notas: z.string().max(500).optional(),
 });
 export type ReservaUpdate = z.infer<typeof reservaUpdate>;
+
+// ---------- Bloqueo de mantenimiento ----------
+// Una "reserva" sin huésped (estado mantenimiento) para planificar trabajos.
+export const bloqueoCreate = z
+  .object({
+    habitacionId: z.number().int().positive(),
+    checkin: fechaISO,
+    checkout: fechaISO,
+    motivo: z.string().max(500).optional(), // se guarda en notas
+  })
+  .refine((b) => b.checkout > b.checkin, {
+    message: "El fin debe ser posterior al inicio",
+    path: ["checkout"],
+  });
+export type BloqueoCreate = z.infer<typeof bloqueoCreate>;
 
 // ---------- Pagos ----------
 export const pagoCreate = z.object({

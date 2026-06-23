@@ -5,6 +5,7 @@ import type {
   HuespedUpdate,
   ReservaCreate,
   ReservaUpdate,
+  BloqueoCreate,
 } from "@suites/shared";
 import type {
   ApiClient,
@@ -77,6 +78,11 @@ const realApi: ApiClient = {
     },
     create: (data: ReservaCreate) =>
       request<unknown>("/reservas", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    mantenimiento: (data: BloqueoCreate) =>
+      request<unknown>("/reservas/mantenimiento", {
         method: "POST",
         body: JSON.stringify(data),
       }),

@@ -33,7 +33,7 @@ export function AccionesReserva({
       await descargarComprobante(
         armarDatos({
           reservaId: reserva.id,
-          huesped: reserva.huesped,
+          huesped: reserva.huesped ?? "—",
           habitacion: habitacionNombre,
           checkin: reserva.checkin,
           checkout: reserva.checkout,
@@ -85,8 +85,39 @@ export function AccionesReserva({
     },
   });
 
+  // Bloqueo de mantenimiento: vista simplificada (solo eliminar el bloqueo).
+  if (reserva.estado === "mantenimiento") {
+    return (
+      <Modal titulo="🔧 Bloqueo de mantenimiento" onClose={onClose}>
+        <dl className="space-y-1 text-sm text-slate-600">
+          <div className="flex justify-between">
+            <dt className="text-slate-400">Habitación</dt>
+            <dd className="font-medium">{habitacionNombre}</dd>
+          </div>
+          <div className="flex justify-between">
+            <dt className="text-slate-400">Fechas</dt>
+            <dd>
+              {reserva.checkin} → {reserva.checkout}
+            </dd>
+          </div>
+        </dl>
+        {error && <p className="text-sm text-rose-600">{error}</p>}
+        <button
+          onClick={() => {
+            setError(null);
+            cancelar.mutate();
+          }}
+          disabled={cancelar.isPending}
+          className="w-full rounded-lg border border-rose-300 px-3 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50 disabled:opacity-50"
+        >
+          {cancelar.isPending ? "Eliminando…" : "Eliminar bloqueo"}
+        </button>
+      </Modal>
+    );
+  }
+
   return (
-    <Modal titulo={`Reserva · ${reserva.huesped}`} onClose={onClose}>
+    <Modal titulo={`Reserva · ${reserva.huesped ?? "—"}`} onClose={onClose}>
       {!editando ? (
         <dl className="space-y-1 text-sm text-slate-600">
           <div className="flex justify-between">

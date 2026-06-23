@@ -12,12 +12,12 @@ export interface Habitacion {
 export interface ReservaListItem {
   id: number;
   habitacionId: number;
-  huespedId: number;
+  huespedId: number | null; // null en bloqueos de mantenimiento
   checkin: string;
   checkout: string;
   estado: EstadoReserva;
   total: string;
-  huesped: string;
+  huesped: string | null; // null en bloqueos de mantenimiento
 }
 
 export interface Huesped {
@@ -81,6 +81,9 @@ export interface ApiClient {
   reservas: {
     list: (desde?: string, hasta?: string) => Promise<ReservaListItem[]>;
     create: (data: import("@suites/shared").ReservaCreate) => Promise<unknown>;
+    mantenimiento: (
+      data: import("@suites/shared").BloqueoCreate,
+    ) => Promise<unknown>;
     update: (
       id: number,
       data: import("@suites/shared").ReservaUpdate,

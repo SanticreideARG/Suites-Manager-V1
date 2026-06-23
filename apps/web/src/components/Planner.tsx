@@ -15,7 +15,13 @@ const colorReserva: Record<EstadoReserva, string> = {
   ocupada: "bg-emerald-500 text-white",
   checkout: "bg-slate-300 text-slate-700",
   cancelada: "hidden",
+  mantenimiento: "bg-rose-500 text-white",
 };
+
+/** Texto de la barra: nombre del huésped o "Mantenimiento" para bloqueos. */
+function etiqueta(r: ReservaListItem): string {
+  return r.estado === "mantenimiento" ? "🔧 Mantenimiento" : (r.huesped ?? "—");
+}
 
 interface Props {
   habitaciones: Habitacion[];
@@ -123,7 +129,7 @@ export function Planner({
                 <button
                   key={r.id}
                   onClick={() => onClickReserva?.(r)}
-                  title={`${r.huesped} · ${r.checkin} → ${r.checkout}`}
+                  title={`${etiqueta(r)} · ${r.checkin} → ${r.checkout}`}
                   className={`z-10 m-1 flex items-center truncate rounded px-2 text-xs font-medium shadow-sm ${colorReserva[r.estado]}`}
                   style={{
                     gridRow: 1,
@@ -131,7 +137,7 @@ export function Planner({
                     gridColumnEnd: 2 + end,
                   }}
                 >
-                  <span className="truncate">{r.huesped}</span>
+                  <span className="truncate">{etiqueta(r)}</span>
                 </button>
               );
             })}

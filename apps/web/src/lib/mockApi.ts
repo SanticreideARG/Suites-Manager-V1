@@ -67,6 +67,17 @@ const reservas: ReservaInterna[] = [
   nuevaReserva(4, 5, addDays(hoy, -2), addDays(hoy, 1), "checkout"),
   // Segunda estadía de Ana Torres -> historial con 2 estadías
   nuevaReserva(3, 5, addDays(hoy, -40), addDays(hoy, -37), "checkout"),
+  // Bloqueo de mantenimiento (sin huésped) en Suite Río
+  {
+    id: ++seqRes,
+    habitacionId: 3,
+    huespedId: null,
+    huesped: null,
+    checkin: addDays(hoy, 8),
+    checkout: addDays(hoy, 11),
+    estado: "mantenimiento",
+    total: "0",
+  },
 ];
 
 const delay = <T,>(v: T) => new Promise<T>((r) => setTimeout(() => r(v), 150));
@@ -209,6 +220,25 @@ export const mockApi: ApiClient = {
         data.checkout,
         "reservada",
       );
+      reservas.push(r);
+      return delay(r);
+    },
+    mantenimiento: (data) => {
+      if (seSolapan(data.habitacionId, data.checkin, data.checkout)) {
+        return Promise.reject(
+          new ApiError(409, "Esas fechas ya están ocupadas.", "overbooking"),
+        );
+      }
+      const r: ReservaInterna = {
+        id: ++seqRes,
+        habitacionId: data.habitacionId,
+        huespedId: null,
+        huesped: null,
+        checkin: data.checkin,
+        checkout: data.checkout,
+        estado: "mantenimiento",
+        total: "0",
+      };
       reservas.push(r);
       return delay(r);
     },
