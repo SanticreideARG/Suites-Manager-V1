@@ -7,6 +7,7 @@ import { huespedesRoutes } from "./routes/huespedes.js";
 import { reportesRoutes } from "./routes/reportes.js";
 import { tarifasRoutes } from "./routes/tarifas.js";
 import { configRoutes } from "./routes/config.js";
+import { auth } from "./auth.js";
 
 /** App Hono sin servidor: la consume server.ts (local) y api/index.ts (Vercel). */
 export const app = new Hono();
@@ -16,6 +17,9 @@ app.use("*", cors());
 
 app.get("/", (c) => c.json({ ok: true, service: "suites-manager-api" }));
 app.get("/health", (c) => c.json({ status: "ok" }));
+
+// Better Auth (todas las rutas /auth/*).
+app.on(["GET", "POST"], "/auth/*", (c) => auth.handler(c.req.raw));
 
 app.route("/habitaciones", habitacionesRoutes);
 app.route("/reservas", reservasRoutes);

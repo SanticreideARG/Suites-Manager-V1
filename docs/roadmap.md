@@ -134,13 +134,39 @@ Ampliación (🔜/⏳):
 > ⏳ opción / mayor alcance.
 
 ### ⭐ Prioritarios
-- ⭐ **Roles y permisos** (administrador / recepcionista / auditor) + auth.
-  **Análisis — Better Auth** (recomendado): TS-first, integra con Drizzle/Postgres y
-  monta un handler en Hono; cliente para React. Plan por increments:
-  (1) instalar + schema de auth (tablas user/session/account/verification) + migración;
-  (2) endpoint de auth en la API + middleware de sesión; (3) login en el panel +
-  proteger rutas; (4) roles (campo/plugin) y gating por rol; (5) Google OAuth
-  (sirve también para los clientes del portal público). Es multi-increment.
+- ⭐ **Roles y permisos** + auth (**Better Auth**). En curso.
+
+  **Roles definidos:**
+  - **admin** — acceso total (como hoy).
+  - **gestor** — operación diaria (calendario, reservas, check-in/out, huéspedes),
+    PERO NO: Configuración (datos del alojamiento), ABM de habitaciones (cantidad de
+    unidades), Reportes, ni reglas de Tarifas. *(Tarifas como "regla de negocio" es mi
+    interpretación — confirmar.)*
+  - **cliente** — solo portal público: crear/gestionar sus reservas y obtener
+    comprobantes una vez emitidos. Sin acceso al panel.
+
+  **Matriz (panel = staff):**
+  | Área | admin | gestor | cliente |
+  |---|---|---|---|
+  | Calendario (reservar, check-in/out) | ✓ | ✓ | ✗ |
+  | Huéspedes | ✓ | ✓ | ✗ |
+  | Reportes | ✓ | ✗ | ✗ |
+  | Tarifas (reglas) | ✓ | ✗ | ✗ |
+  | Configuración (alojamiento + ABM habitaciones) | ✓ | ✗ | ✗ |
+  | Portal: reservar/gestionar propias + comprobantes | — | — | ✓ |
+
+  **Plan por increments:**
+  - ✅ (1+2) Better Auth instalado (1.2.12, fijado a zod 3 vía override de `better-call`
+    a 1.0.29) + schema auth_user/session/account/verification (migración 0005, con
+    `role` default 'cliente') + config (`auth.ts`) + handler en Hono (`/auth/*`).
+    **Signup/login verificados contra Neon** — el driver neon-http funciona, NO hizo
+    falta `pg` (Better Auth no usó transacciones interactivas en email/password).
+  - 🔜 (3) login en el panel + sesión en el front + proteger rutas. CORS: para cookies
+    cross-origin (web↔api) configurar cors con `credentials` + `trustedOrigins`.
+    Vercel: agregar `BETTER_AUTH_SECRET` (y `BETTER_AUTH_URL`) al proyecto API.
+  - 🔜 (4) gating por rol según la matriz (middleware en API + ocultar tabs en front).
+    Promover el primer admin: `UPDATE auth_user SET role='admin' WHERE email=...`.
+  - 🔜 (5) Google OAuth (clientes del portal).
 - ⭐ **Tests automatizados**:
   - ✅ **Vitest** (unit): lógica de tarifas dinámicas (finde/rango/prioridad/totales),
     7 tests. `pnpm test`. Base lista para sumar más (overlap de fechas, schemas Zod).

@@ -15,6 +15,7 @@
     "@hono/zod-validator": "^0.4.2",
     "@suites/db": "workspace:*",
     "@suites/shared": "workspace:*",
+    "better-auth": "^1.2.12",
     "hono": "^4.6.16",
     "zod": "^3.24.1"
   },

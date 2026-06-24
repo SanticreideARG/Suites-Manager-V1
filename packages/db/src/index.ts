@@ -30,6 +30,10 @@ export {
   pagos,
   tarifaReglas,
   config,
+  authUser,
+  authSession,
+  authAccount,
+  authVerification,
 } from "./schema.js";
 export type {
   Habitacion,
