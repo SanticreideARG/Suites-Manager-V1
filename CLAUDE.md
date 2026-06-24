@@ -53,6 +53,7 @@ pnpm dev:api         # solo API
 pnpm dev:web         # solo web
 pnpm dev:mock        # web con datos en memoria, SIN DB (VITE_MOCK=1)
 pnpm typecheck       # tsc --noEmit en los 4 workspaces
+pnpm test            # vitest (unit) — apps/api (lógica de tarifas)
 pnpm --filter @suites/web build
 ```
 

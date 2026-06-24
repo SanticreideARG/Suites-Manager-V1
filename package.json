@@ -14,7 +14,8 @@
     "db:seed": "pnpm --filter @suites/db seed",
     "db:push": "pnpm --filter @suites/db push",
     "db:studio": "pnpm --filter @suites/db studio",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm --filter @suites/api test"
   },
   "devDependencies": {
     "typescript": "^5.7.3"

@@ -7,6 +7,7 @@
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "build:vercel": "node scripts/build-vercel.mjs"
   },
   "dependencies": {
@@ -21,6 +22,7 @@
     "@types/node": "^22.10.5",
     "dotenv": "^16.4.7",
     "esbuild": "^0.24.2",
-    "tsx": "^4.19.2"
+    "tsx": "^4.19.2",
+    "vitest": "^4.1.9"
   }
 }

@@ -134,10 +134,25 @@ Ampliación (🔜/⏳):
 > ⏳ opción / mayor alcance.
 
 ### ⭐ Prioritarios
-- ⭐ **Roles y permisos** (administrador / recepcionista / auditor) + auth
-  (Better Auth). Base de la separación de funciones y de la auditoría.
-- ⭐ **Tests automatizados** (vitest/node:test): unitarios + integración. Críticos:
-  anti-overbooking con reservas concurrentes, cancelaciones, cálculo de tarifas.
+- ⭐ **Roles y permisos** (administrador / recepcionista / auditor) + auth.
+  **Análisis — Better Auth** (recomendado): TS-first, integra con Drizzle/Postgres y
+  monta un handler en Hono; cliente para React. Plan por increments:
+  (1) instalar + schema de auth (tablas user/session/account/verification) + migración;
+  (2) endpoint de auth en la API + middleware de sesión; (3) login en el panel +
+  proteger rutas; (4) roles (campo/plugin) y gating por rol; (5) Google OAuth
+  (sirve también para los clientes del portal público). Es multi-increment.
+- ⭐ **Tests automatizados**:
+  - ✅ **Vitest** (unit): lógica de tarifas dinámicas (finde/rango/prioridad/totales),
+    7 tests. `pnpm test`. Base lista para sumar más (overlap de fechas, schemas Zod).
+  - 🔜 unit adicionales + **integración** del anti-overbooking concurrente y
+    cancelaciones (requiere una **DB de test**, p. ej. branch de Neon o Postgres local).
+  - 🔌 **Playwright** (e2e): flujos crear/modificar/cancelar reserva, overbooking,
+    huéspedes. Corre contra la web (modo mock o API real).
+- ⭐ **Observabilidad / trazabilidad**:
+  - 🔌 **Sentry**: captura de errores y trazas en web (`@sentry/react`) y API
+    (`@sentry/node`). Requiere DSN (cuenta Sentry). Bajo esfuerzo de wiring.
+  - 🔌 **Uptime Kuma**: monitoreo de disponibilidad (self-hosted) apuntando a
+    `/health` de la API y a la URL de la web; alertas. Es ops/infra (fuera del repo).
 - ⭐ **Reportes ampliados**: sumar **cancelaciones** y **estadía promedio** a los
   actuales (ocupación, ingresos, frecuentes). Rápido, sobre lo ya hecho.
 - ⭐ **Housekeeping + historial de mantenimiento por unidad**: estado de limpieza por
