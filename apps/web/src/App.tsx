@@ -77,7 +77,8 @@ function Tab({
 }
 
 function CalendarioView() {
-  const { fechaAncla, diasVisibles, avanzar, setFechaAncla } = useUi();
+  const { fechaAncla, diasVisibles, avanzar, setFechaAncla, verMes, verQuincena } =
+    useUi();
   const hasta = addDays(fechaAncla, diasVisibles);
 
   const habitacionesQ = useQuery({
@@ -118,7 +119,25 @@ function CalendarioView() {
         >
           Siguiente →
         </button>
-        <span className="ml-2 text-sm text-slate-400">
+        <div className="ml-2 flex gap-1 rounded-lg bg-slate-100 p-0.5 text-xs">
+          <button
+            onClick={verQuincena}
+            className={`rounded px-2 py-1 font-medium ${
+              diasVisibles === 14 ? "bg-white text-slate-800 shadow-sm" : "text-slate-500"
+            }`}
+          >
+            Quincena
+          </button>
+          <button
+            onClick={verMes}
+            className={`rounded px-2 py-1 font-medium ${
+              diasVisibles > 14 ? "bg-white text-slate-800 shadow-sm" : "text-slate-500"
+            }`}
+          >
+            Mes
+          </button>
+        </div>
+        <span className="text-sm text-slate-400">
           {fechaAncla} → {hasta}
         </span>
 

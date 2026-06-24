@@ -14,6 +14,7 @@ const ars = (n: number) => "$" + n.toLocaleString("es-AR");
 export function ReportesPage() {
   const [desde, setDesde] = useState(inicioDeMes());
   const [hasta, setHasta] = useState(inicioMesSiguiente());
+  const [exportando, setExportando] = useState(false);
 
   const q = useQuery({
     queryKey: ["reportes", desde, hasta],
@@ -47,6 +48,24 @@ export function ReportesPage() {
             El "hasta" debe ser posterior al "desde".
           </p>
         )}
+        <button
+          disabled={!q.data || exportando}
+          onClick={async () => {
+            if (!q.data) return;
+            setExportando(true);
+            try {
+              const { exportarReporteExcel } = await import(
+                "./exportarReporteExcel.js"
+              );
+              await exportarReporteExcel(q.data);
+            } finally {
+              setExportando(false);
+            }
+          }}
+          className="ml-auto rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+        >
+          {exportando ? "Exportando…" : "⬇ Excel"}
+        </button>
       </div>
 
       {q.isLoading && <p className="text-sm text-slate-400">Cargando…</p>}

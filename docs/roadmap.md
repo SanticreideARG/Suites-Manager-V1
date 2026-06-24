@@ -105,8 +105,8 @@ Ampliación (🔜/⏳):
   NO canceladas; si solo tiene canceladas, las borra y elimina el huésped. Verificado.
 
 ### Implementaciones
-- **Impl 1 — calendario**: 🔜 ver mes completo (viable, el planner ya es N días);
-  🔜 export Excel de reportes con rango de fechas.
+- **Impl 1 — calendario**: ✅ toggle Quincena/Mes (vista mensual = días del mes);
+  ✅ export Excel de reportes (3 hojas) con el rango configurado en Reportes. Verificado.
 - **Impl 2 — dashboard bajo el calendario**: ✅ grid check-ins próximos (hoy/mañana),
   ✅ grid check-outs próximos; ⏳ widget de clima (placeholder; depende de ubicación
   del alojamiento → Impl 4). Huésped detalle: ✅ `mailto:` en email, ✅ popover en

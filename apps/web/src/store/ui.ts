@@ -6,7 +6,10 @@ interface UiState {
   fechaAncla: string;
   diasVisibles: number;
   setFechaAncla: (f: string) => void;
+  setDiasVisibles: (n: number) => void;
   avanzar: (dias: number) => void;
+  verMes: () => void; // ancla = 1° del mes actual, diasVisibles = días del mes
+  verQuincena: () => void; // 14 días desde hoy
 }
 
 function hoyISO(): string {
@@ -17,10 +20,23 @@ export const useUi = create<UiState>((set) => ({
   fechaAncla: hoyISO(),
   diasVisibles: 14,
   setFechaAncla: (fechaAncla) => set({ fechaAncla }),
+  setDiasVisibles: (diasVisibles) => set({ diasVisibles }),
   avanzar: (dias) =>
     set((s) => {
-      const d = new Date(s.fechaAncla);
-      d.setDate(d.getDate() + dias);
+      const d = new Date(s.fechaAncla + "T00:00:00Z");
+      d.setUTCDate(d.getUTCDate() + dias);
       return { fechaAncla: d.toISOString().slice(0, 10) };
     }),
+  verMes: () =>
+    set((s) => {
+      const d = new Date(s.fechaAncla + "T00:00:00Z");
+      const y = d.getUTCFullYear();
+      const m = d.getUTCMonth();
+      const dias = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+      return {
+        fechaAncla: `${y}-${String(m + 1).padStart(2, "0")}-01`,
+        diasVisibles: dias,
+      };
+    }),
+  verQuincena: () => set({ fechaAncla: hoyISO(), diasVisibles: 14 }),
 }));
