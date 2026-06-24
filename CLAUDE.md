@@ -143,6 +143,18 @@ Setup actual (FUNCIONA):
 ni backend. Útil para verificar UI. Muestra un banner ámbar. Replica las reglas clave
 (anti-overbooking y "no eliminar habitación con reservas").
 
+## Autenticación (Better Auth)
+- `better-auth@1.2.12` (zod 3). El root `package.json` tiene `pnpm.overrides.better-call=1.0.29`
+  para evitar el peer de zod 4 (el proyecto entero usa zod 3 — NO subir a zod 4 sin migrar todo).
+- Config en `apps/api/src/auth.ts` (drizzleAdapter sobre la `db` neon-http, emailAndPassword,
+  `basePath: "/auth"`, campo `role`). Handler montado en Hono bajo la ruta `/auth/...`.
+- Tablas `auth_user/auth_session/auth_account/auth_verification` (migración 0005). `role`:
+  `admin` | `gestor` | `cliente` (default `cliente`). Promover admin: `UPDATE auth_user SET role='admin' WHERE email=...`.
+- Env: `BETTER_AUTH_SECRET` + `BETTER_AUTH_URL` (en `.env` local; **agregarlos en el proyecto API de Vercel**).
+- neon-http alcanza para el flujo email/password (no requirió transacciones interactivas/pg).
+- Pendiente: login en el front (CORS con `credentials` + `trustedOrigins` para cookies cross-origin),
+  gating por rol, Google OAuth.
+
 ## Convenciones de Git
 
 - Repo: https://github.com/SanticreideARG/Suites-Manager-V1 (`origin`, rama `main`).
