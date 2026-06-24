@@ -117,7 +117,8 @@ Ampliación (🔜/⏳):
   - ✅ **4-A** sección Configuración + datos del alojamiento editables (tabla `config`
     fila única, migración 0004; GET/PUT /config; formulario). El comprobante PDF ya usa
     estos datos (antes hardcodeados). Verificado: API (Neon) + UI (mock).
-  - 🔜 **4-B** mover ABM de habitaciones a Configuración (calendario solo lectura).
+  - ✅ **4-B** ABM de habitaciones en Configuración (lista + alta/edición/baja). El
+    calendario quedó solo lectura (sin botón crear ni edición por click). Verificado.
   - 🔜 **4-C** temas claro/oscuro (Tailwind dark mode + toggle).
   - ⏳ comprobantes: lista, próximo número, filtro por cliente/empresa, reasociar
     (anular + reemitir). Requiere PERSISTIR comprobantes (hoy el PDF se genera en el
@@ -151,6 +152,18 @@ Ampliación (🔜/⏳):
 - 🔌 **Notificaciones**: email (Resend) + WhatsApp (Evolution API) — confirmación de
   reserva, recordatorio de check-in, encuesta post-estadía.
 - 🔌 **Pagos electrónicos**: MercadoPago (checkout + QR interoperable + webhooks).
+
+### 🌐 Portal público / reservas online (módulo nuevo, medio plazo)
+- 🔜 **Landing page pública** del alojamiento: presentación, fotos, habitaciones,
+  servicios, ubicación, contacto (usa los datos de `config`).
+- 🔜 **Gestor de reservas para clientes** (self-service): consultar disponibilidad por
+  fechas, ver habitaciones libres + precio (cotización con tarifas dinámicas), reservar
+  online. Reutiliza el anti-overbooking ya existente.
+- ⏳ **Registro/login de clientes con Google OAuth** — a desarrollar a futuro.
+  (Coordina con roles/permisos: el cliente es un rol distinto del staff.)
+- Nota de arquitectura: probablemente un sub-sitio/área pública aparte del panel de
+  gestión, consumiendo endpoints públicos (disponibilidad, cotizar, crear reserva
+  "pendiente de confirmación"). El staff confirma desde el panel.
 
 ### ⏳ Opciones / mayor alcance (ver Fase 3)
 - ⏳ **Channel Manager** (Booking/Airbnb/Expedia) — anti doble-reserva sincronizando.

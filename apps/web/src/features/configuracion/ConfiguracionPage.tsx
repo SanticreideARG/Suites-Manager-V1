@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api.js";
+import { HabitacionesAdmin } from "./HabitacionesAdmin.js";
 
 const campos = [
   ["nombre", "Nombre"],
@@ -50,7 +51,8 @@ export function ConfiguracionPage() {
   if (q.isLoading) return <p className="text-sm text-slate-400">Cargando…</p>;
 
   return (
-    <div className="max-w-2xl">
+    <div className="space-y-10">
+      <section className="max-w-2xl">
       <h2 className="mb-1 text-lg font-semibold text-slate-800">
         Datos del alojamiento
       </h2>
@@ -86,6 +88,9 @@ export function ConfiguracionPage() {
           <span className="text-sm text-rose-600">No se pudo guardar.</span>
         )}
       </div>
+      </section>
+
+      <HabitacionesAdmin />
     </div>
   );
 }

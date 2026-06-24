@@ -1,12 +1,10 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, usandoMock } from "./lib/api.js";
-import type { Habitacion, ReservaListItem } from "./lib/api.js";
+import type { ReservaListItem } from "./lib/api.js";
 import { addDays } from "./lib/fechas.js";
 import { useUi } from "./store/ui.js";
 import { Planner } from "./components/Planner.js";
-import { NuevaHabitacion } from "./features/habitaciones/NuevaHabitacion.js";
-import { EditarHabitacion } from "./features/habitaciones/EditarHabitacion.js";
 import { NuevaReserva } from "./features/reservas/NuevaReserva.js";
 import { AccionesReserva } from "./features/reservas/AccionesReserva.js";
 import { HuespedesPage } from "./features/huespedes/HuespedesPage.js";
@@ -105,7 +103,6 @@ function CalendarioView() {
     fecha: string;
   } | null>(null);
   const [reservaSel, setReservaSel] = useState<ReservaListItem | null>(null);
-  const [habitacionSel, setHabitacionSel] = useState<Habitacion | null>(null);
   const [exportando, setExportando] = useState(false);
 
   return (
@@ -174,7 +171,6 @@ function CalendarioView() {
           >
             {exportando ? "Exportando…" : "⬇ Excel"}
           </button>
-          <NuevaHabitacion />
         </div>
       </div>
 
@@ -200,19 +196,12 @@ function CalendarioView() {
               setNuevaReserva({ habitacionId, fecha })
             }
             onClickReserva={(r) => setReservaSel(r)}
-            onClickHabitacion={(h) => setHabitacionSel(h)}
           />
         </div>
       )}
 
       {habitacionesQ.data && <ProximosPanel />}
 
-      {habitacionSel && (
-        <EditarHabitacion
-          habitacion={habitacionSel}
-          onClose={() => setHabitacionSel(null)}
-        />
-      )}
       {nuevaReserva && (
         <NuevaReserva
           habitacionId={nuevaReserva.habitacionId}
