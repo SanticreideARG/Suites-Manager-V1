@@ -2,8 +2,10 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { db, desc, eq, tarifaReglas } from "@suites/db";
 import { tarifaReglaCreate, tarifaReglaUpdate } from "@suites/shared";
+import { adminOnly } from "../middleware/auth.js";
 
 export const tarifasRoutes = new Hono();
+tarifasRoutes.use("*", adminOnly);
 
 tarifasRoutes.get("/", async (c) => {
   const rows = await db

@@ -2,15 +2,17 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { db, eq, habitaciones } from "@suites/db";
 import { habitacionCreate, habitacionUpdate } from "@suites/shared";
+import { staff, adminOnly } from "../middleware/auth.js";
 
 export const habitacionesRoutes = new Hono();
+habitacionesRoutes.use("*", staff); // ver: admin + gestor; ABM: solo admin
 
 habitacionesRoutes.get("/", async (c) => {
   const rows = await db.select().from(habitaciones).orderBy(habitaciones.id);
   return c.json(rows);
 });
 
-habitacionesRoutes.post("/", zValidator("json", habitacionCreate), async (c) => {
+habitacionesRoutes.post("/", adminOnly, zValidator("json", habitacionCreate), async (c) => {
   const data = c.req.valid("json");
   // El payload ya está validado por Zod (habitacionCreate) → runtime seguro.
   // `as any` a propósito: la inferencia de tipos de Drizzle se degrada en el
@@ -27,6 +29,7 @@ habitacionesRoutes.post("/", zValidator("json", habitacionCreate), async (c) => 
 
 habitacionesRoutes.patch(
   "/:id",
+  adminOnly,
   zValidator("json", habitacionUpdate),
   async (c) => {
     const id = Number(c.req.param("id"));
@@ -44,7 +47,7 @@ habitacionesRoutes.patch(
   },
 );
 
-habitacionesRoutes.delete("/:id", async (c) => {
+habitacionesRoutes.delete("/:id", adminOnly, async (c) => {
   const id = Number(c.req.param("id"));
   try {
     const [row] = await db

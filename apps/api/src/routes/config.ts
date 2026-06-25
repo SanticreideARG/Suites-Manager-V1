@@ -2,16 +2,18 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { db, eq, config } from "@suites/db";
 import { configUpdate } from "@suites/shared";
+import { staff, adminOnly } from "../middleware/auth.js";
 
 export const configRoutes = new Hono();
 
-// Configuración del alojamiento (fila única id=1).
-configRoutes.get("/", async (c) => {
+// Configuración del alojamiento (fila única id=1). Leer: staff (lo usa el PDF).
+configRoutes.get("/", staff, async (c) => {
   const [row] = await db.select().from(config).where(eq(config.id, 1));
   return c.json(row ?? null);
 });
 
-configRoutes.put("/", zValidator("json", configUpdate), async (c) => {
+// Modificar reglas de negocio: solo admin.
+configRoutes.put("/", adminOnly, zValidator("json", configUpdate), async (c) => {
   const data = c.req.valid("json");
   const [row] = await db
     .update(config)

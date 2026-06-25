@@ -43,6 +43,7 @@ const USE_MOCK = import.meta.env.VITE_MOCK === "1";
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     headers: { "Content-Type": "application/json" },
+    credentials: "include", // envía la cookie de sesión (Better Auth)
     ...init,
   });
   if (!res.ok) {

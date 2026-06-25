@@ -2,8 +2,10 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { and, db, desc, eq, ne, habitaciones, huespedes, reservas } from "@suites/db";
 import { huespedCreate, huespedUpdate } from "@suites/shared";
+import { staff } from "../middleware/auth.js";
 
 export const huespedesRoutes = new Hono();
+huespedesRoutes.use("*", staff);
 
 huespedesRoutes.get("/", async (c) => {
   const rows = await db.select().from(huespedes).orderBy(huespedes.nombre);

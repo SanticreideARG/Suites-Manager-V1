@@ -169,8 +169,13 @@ Ampliación (🔜/⏳):
     + API 3001): login → panel → signout. ⚠️ Vercel: agregar `BETTER_AUTH_SECRET`,
     `BETTER_AUTH_URL` (=URL del API) y `WEB_URL` (=URL de la web, para trustedOrigins)
     al proyecto API; verificar cookies cross-site en prod.
-  - 🔜 (4) gating por rol según la matriz (middleware en API + ocultar tabs en front).
-    Promover el primer admin: `UPDATE auth_user SET role='admin' WHERE email=...`.
+  - ✅ (4) gating por rol: middleware en API (`apps/api/src/middleware/auth.ts`:
+    `staff`=admin+gestor, `adminOnly`=admin) aplicado por ruta/método (reportes/tarifas
+    adminOnly; config GET staff/PUT admin; habitaciones GET staff/ABM admin; reservas y
+    huéspedes staff). El front oculta tabs Reportes/Tarifas/Configuración salvo admin y
+    muestra "sin acceso" a clientes. `credentials: include` en el cliente API (envía la
+    cookie). Promover roles: `pnpm db:promote <email> <admin|gestor|cliente>`.
+    Verificado los 3 roles (tabs + 403/200).
   - 🔜 (5) Google OAuth (clientes del portal).
 - ⭐ **Tests automatizados**:
   - ✅ **Vitest** (unit): lógica de tarifas dinámicas (finde/rango/prioridad/totales),

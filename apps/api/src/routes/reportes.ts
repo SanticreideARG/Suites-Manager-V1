@@ -1,7 +1,9 @@
 import { Hono } from "hono";
 import { sql } from "@suites/db";
+import { adminOnly } from "../middleware/auth.js";
 
 export const reportesRoutes = new Hono();
+reportesRoutes.use("*", adminOnly);
 
 /** Filas crudas de neon vienen como strings/loose; helper para numerar. */
 const n = (v: unknown) => Number(v ?? 0);

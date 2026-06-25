@@ -36,6 +36,29 @@ export function App() {
     return <LoginPage />;
   }
 
+  // Rol: en modo demo se asume admin. cliente no tiene acceso al panel.
+  const role = usandoMock
+    ? "admin"
+    : ((session?.user as { role?: string } | undefined)?.role ?? "gestor");
+  const esAdmin = role === "admin";
+
+  if (requiereAuth && role === "cliente") {
+    return (
+      <div className="mx-auto max-w-md p-8 text-center">
+        <h1 className="text-xl font-bold text-slate-800">Suites Manager</h1>
+        <p className="mt-3 text-sm text-slate-500">
+          Tu cuenta es de cliente y no tiene acceso al panel de gestión.
+        </p>
+        <button
+          onClick={() => signOut()}
+          className="mt-4 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        >
+          Salir
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-7xl p-6">
       {usandoMock && (
@@ -77,23 +100,27 @@ export function App() {
           <Tab activa={vista === "huespedes"} onClick={() => setVista("huespedes")}>
             Huéspedes
           </Tab>
-          <Tab activa={vista === "reportes"} onClick={() => setVista("reportes")}>
-            Reportes
-          </Tab>
-          <Tab activa={vista === "tarifas"} onClick={() => setVista("tarifas")}>
-            Tarifas
-          </Tab>
-          <Tab activa={vista === "config"} onClick={() => setVista("config")}>
-            Configuración
-          </Tab>
+          {esAdmin && (
+            <>
+              <Tab activa={vista === "reportes"} onClick={() => setVista("reportes")}>
+                Reportes
+              </Tab>
+              <Tab activa={vista === "tarifas"} onClick={() => setVista("tarifas")}>
+                Tarifas
+              </Tab>
+              <Tab activa={vista === "config"} onClick={() => setVista("config")}>
+                Configuración
+              </Tab>
+            </>
+          )}
         </nav>
       </header>
 
       {vista === "calendario" && <CalendarioView />}
       {vista === "huespedes" && <HuespedesPage />}
-      {vista === "reportes" && <ReportesPage />}
-      {vista === "tarifas" && <TarifasPage />}
-      {vista === "config" && <ConfiguracionPage />}
+      {vista === "reportes" && esAdmin && <ReportesPage />}
+      {vista === "tarifas" && esAdmin && <TarifasPage />}
+      {vista === "config" && esAdmin && <ConfiguracionPage />}
     </div>
   );
 }

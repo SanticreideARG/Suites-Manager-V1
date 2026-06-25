@@ -15,8 +15,10 @@ import {
 } from "@suites/db";
 import { reservaCreate, reservaUpdate, bloqueoCreate } from "@suites/shared";
 import { calcularTotal } from "../calcularTarifa.js";
+import { staff } from "../middleware/auth.js";
 
 export const reservasRoutes = new Hono();
+reservasRoutes.use("*", staff);
 
 function esViolacionOverbooking(err: unknown): boolean {
   return (
