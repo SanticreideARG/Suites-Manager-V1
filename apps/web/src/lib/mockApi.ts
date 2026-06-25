@@ -339,6 +339,18 @@ export const mockApi: ApiClient = {
         capacidad > 0
           ? Math.round((nochesOcupadas / capacidad) * 1000) / 10
           : 0;
+      const cancelaciones = reservas.filter(
+        (r) =>
+          r.estado === "cancelada" && r.checkin >= desde && r.checkin < hasta,
+      ).length;
+      const nochesDel = delPeriodo.reduce(
+        (a, r) => a + diffDays(r.checkin, r.checkout),
+        0,
+      );
+      const estadiaPromedio =
+        delPeriodo.length > 0
+          ? Math.round((nochesDel / delPeriodo.length) * 10) / 10
+          : 0;
 
       const res: ReporteResumen = {
         periodo: { desde, hasta, dias },
@@ -346,6 +358,8 @@ export const mockApi: ApiClient = {
         nochesOcupadas,
         ingresos,
         reservas: delPeriodo.length,
+        cancelaciones,
+        estadiaPromedio,
         porHabitacion,
         frecuentes,
       };

@@ -189,8 +189,9 @@ Ampliación (🔜/⏳):
     (`@sentry/node`). Requiere DSN (cuenta Sentry). Bajo esfuerzo de wiring.
   - 🔌 **Uptime Kuma**: monitoreo de disponibilidad (self-hosted) apuntando a
     `/health` de la API y a la URL de la web; alertas. Es ops/infra (fuera del repo).
-- ⭐ **Reportes ampliados**: sumar **cancelaciones** y **estadía promedio** a los
-  actuales (ocupación, ingresos, frecuentes). Rápido, sobre lo ya hecho.
+- ✅ **Reportes ampliados**: agregadas **cancelaciones** y **estadía promedio** a los
+  KPIs (además de ocupación, ingresos, reservas, noches, frecuentes), en API, mock,
+  UI y export Excel. Verificado en mock.
 - ⭐ **Housekeeping + historial de mantenimiento por unidad**: estado de limpieza por
   habitación; registrar e historiar mantenimientos/incidencias por unidad (extiende
   los bloqueos de mantenimiento ya existentes).

@@ -76,11 +76,13 @@ export function ReportesPage() {
       {q.data && (
         <div className="space-y-6">
           {/* KPIs */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             <Kpi label="Ocupación" valor={`${q.data.ocupacionPct}%`} />
             <Kpi label="Ingresos" valor={ars(q.data.ingresos)} />
             <Kpi label="Reservas" valor={String(q.data.reservas)} />
             <Kpi label="Noches ocupadas" valor={String(q.data.nochesOcupadas)} />
+            <Kpi label="Estadía promedio" valor={`${q.data.estadiaPromedio} n`} />
+            <Kpi label="Cancelaciones" valor={String(q.data.cancelaciones)} />
           </div>
 
           {/* Ingresos por habitación */}

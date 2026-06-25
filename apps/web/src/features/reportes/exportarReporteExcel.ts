@@ -24,6 +24,8 @@ export async function exportarReporteExcel(reporte: ReporteResumen) {
   resumen.addRow({ k: "Ingresos", v: reporte.ingresos });
   resumen.addRow({ k: "Reservas", v: reporte.reservas });
   resumen.addRow({ k: "Noches ocupadas", v: reporte.nochesOcupadas });
+  resumen.addRow({ k: "Estadía promedio (noches)", v: reporte.estadiaPromedio });
+  resumen.addRow({ k: "Cancelaciones", v: reporte.cancelaciones });
 
   const porHab = wb.addWorksheet("Por habitación");
   porHab.columns = [

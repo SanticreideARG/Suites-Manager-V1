@@ -46,11 +46,20 @@ reportesRoutes.get("/resumen", async (c) => {
   const nochesOcupadas = n(ocup?.noches);
 
   const [tot] = (await sql`
-    SELECT COALESCE(SUM(total), 0) AS ingresos, COUNT(*)::int AS reservas
+    SELECT COALESCE(SUM(total), 0) AS ingresos,
+           COUNT(*)::int AS reservas,
+           COALESCE(AVG(checkout - checkin), 0) AS estadia_promedio
     FROM reservas
     WHERE estado NOT IN ('cancelada', 'mantenimiento')
       AND checkin >= ${desde}::date AND checkin < ${hasta}::date
-  `) as { ingresos: string; reservas: number }[];
+  `) as { ingresos: string; reservas: number; estadia_promedio: string }[];
+
+  const [canc] = (await sql`
+    SELECT COUNT(*)::int AS cancelaciones
+    FROM reservas
+    WHERE estado = 'cancelada'
+      AND checkin >= ${desde}::date AND checkin < ${hasta}::date
+  `) as { cancelaciones: number }[];
 
   const porHabitacion = (await sql`
     SELECT h.nombre AS habitacion,
@@ -87,6 +96,8 @@ reportesRoutes.get("/resumen", async (c) => {
     nochesOcupadas,
     ingresos: n(tot?.ingresos),
     reservas: n(tot?.reservas),
+    cancelaciones: n(canc?.cancelaciones),
+    estadiaPromedio: Math.round(n(tot?.estadia_promedio) * 10) / 10,
     porHabitacion: porHabitacion.map((r) => ({
       habitacion: r.habitacion,
       reservas: n(r.reservas),

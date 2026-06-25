@@ -80,6 +80,8 @@ export interface ReporteResumen {
   nochesOcupadas: number;
   ingresos: number;
   reservas: number;
+  cancelaciones: number;
+  estadiaPromedio: number;
   porHabitacion: {
     habitacion: string;
     reservas: number;

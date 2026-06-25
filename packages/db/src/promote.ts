@@ -16,9 +16,10 @@ const rows = (await sql`
   UPDATE auth_user SET role = ${role} WHERE email = ${email} RETURNING email, role
 `) as { email: string; role: string }[];
 
-if (rows.length === 0) {
+const fila = rows[0];
+if (!fila) {
   console.error(`No se encontró el usuario ${email}`);
   process.exit(1);
 }
-console.log(`OK: ${rows[0].email} → ${rows[0].role}`);
+console.log(`OK: ${fila.email} → ${fila.role}`);
 process.exit(0);
