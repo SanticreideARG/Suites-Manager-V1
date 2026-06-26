@@ -203,6 +203,98 @@ Ampliación (🔜/⏳):
 
 ---
 
+## Lote de pedidos (triage 2026-06-26 B) — ⏳ asentado, sin implementar
+
+> Parte de los ítems requieren análisis o cuestionario previo (indicado).
+
+### BUG — Línea blanca en tablas (modo oscuro, persistente) 🐛
+- ⏳ **BUG 3** — El divisor `divide-slate-100` sigue mostrando una línea blanca/clara
+  entre filas en modo oscuro en ciertas tablas. Ya se intentó un override de
+  especificidad en index.css; no fue suficiente en producción. A re-diagnosticar
+  apuntando al selector exacto que genera Tailwind v4 en el bundle final.
+
+### Seguridad — Cambios sensibles solicitan contraseña (⏳)
+- ⏳ **Re-autenticación antes de cambios sensibles**: operaciones como cambiar email,
+  cambiar contraseña, o eliminar una cuenta propia deben solicitar la contraseña
+  actual antes de ejecutarse (flujo "confirm password" o "re-auth"). Aplica tanto
+  en el panel de gestión como (a futuro) en el portal de clientes.
+
+### Configuración — renombrar "Habitaciones" → "Alojamientos" (⏳)
+- ⏳ **Renombrar la sección** "Habitaciones" en Configuración a **"Alojamientos"**
+  (el término es más genérico y aplica a cabañas, suites, etc.).
+  Impacta: label en el sidebar, título de la sección, texto de los formularios.
+  La entidad en DB (`habitaciones`) no cambia — es solo vocabulario de UI.
+
+### Configuración — nombre y logo de la app personalizables (⏳)
+- ⏳ **Nombre de la aplicación editable** desde Configuración › "Nombre" (campo ya
+  existente en `config`): que el nombre mostrado en sidebar, login y comprobantes
+  use el valor configurado en lugar del hardcodeado "Suites Manager".
+- ⏳ **Logo editable con upload de archivo**: el campo "Logo (URL)" actual solo acepta
+  una URL. Extenderlo para permitir **subir un archivo** (JPG/PNG) desde el
+  dispositivo. Implica: endpoint de upload + almacenamiento de objetos.
+  Ver análisis de carga de imágenes más abajo.
+
+### Análisis — Carga de imágenes (logo y alojamientos) (⏳)
+- ⏳ **Análisis pendiente**: definir la estrategia de almacenamiento y upload para:
+  - Logo del alojamiento (desde Configuración).
+  - Fotos de cada unidad/alojamiento (para la ficha y el futuro portal).
+  
+  **Opciones a evaluar:**
+  - **Vercel Blob** (más simple, integra directo con el stack): upload firmado desde
+    la API, URL pública guardada en DB. Sin gestión de infra adicional.
+  - **Cloudflare R2** (más económico a escala, S3-compatible): requiere cuenta CF.
+  - **Supabase Storage** (si se evalúa mover parte del stack): alternativa.
+  
+  **Decisión a tomar:** servicio, tamaño máximo, formatos aceptados,
+  redimensionado/optimización (¿en cliente antes de subir, o en servidor?).
+  *Requiere cuestionario — ver al pie de este bloque.*
+
+### Análisis — Multi-sucursal (⏳)
+- ⏳ **Análisis de segmentación por sucursal**: cómo gestionar múltiples propiedades
+  desde la misma instancia de la app, con:
+  - Calendarios y disponibilidad **independientes** por sucursal.
+  - Gestores asignados a una o más sucursales (no acceden a las demás).
+  - Clientes y reservas **por sucursal** o compartidos (a definir).
+  - Admin global con vista de todas.
+  
+  **Impacto en el modelo de datos**: prácticamente todas las tablas necesitarían
+  `sucursal_id` como foreign key (habitaciones, reservas, huéspedes, config, etc.).
+  Es un cambio estructural grande — conviene decidirlo **antes** de escalar otras
+  funcionalidades para no reescribir. *Requiere cuestionario.*
+
+### Análisis — Ampliación de reportes (⏳)
+- ⏳ **Análisis pendiente**: qué métricas/vistas adicionales agregar. Las actuales son
+  ocupación, ingresos, reservas, noches, estadía promedio, cancelaciones, frecuentes
+  (por huésped). Posibles ampliaciones:
+  - Ingresos por categoría de cargo extra (Servicios, Consumos, etc.).
+  - Tasa de ocupación por habitación/tipo (no solo global).
+  - Comparación mes a mes / año a año.
+  - Huéspedes nuevos vs recurrentes.
+  - Forecast de ingresos (reservas futuras confirmadas).
+  - Export PDF del reporte (hoy solo Excel).
+  *Requiere cuestionario para priorizar qué métricas son más útiles.*
+
+### Portal de clientes — website público (⏳, análisis + cuestionario)
+- ⏳ **Website público moderno** para que los clientes puedan:
+  - Cargar / actualizar sus datos personales.
+  - Consultar **disponibilidad por fecha** con vista de calendario o listado.
+  - Ver **precio estimado** (cotización con tarifas dinámicas).
+  - Ver **características y fotos** de cada unidad.
+  - **Realizar reservas** online (pendiente de confirmación por el staff, o
+    automática según config).
+  - Historial de sus propias reservas y comprobantes.
+  
+  **Arquitectura probable**: sub-sitio separado del panel de gestión (o rutas
+  públicas `/portal/*` en el mismo repo), con endpoints públicos (disponibilidad,
+  cotizar, crear reserva). Auth con Google OAuth o email (rol `cliente`).
+  
+  **Ítems previos necesarios**: características de unidades, carga de imágenes,
+  Google OAuth para clientes.
+  
+  *Este ítem tiene su propio cuestionario — ver al pie.*
+
+---
+
 ## Estratégicos (análisis competitivo) — priorización
 
 > ⭐ prioritario (corto/mediano) · 🔌 integración (requiere credenciales externas) ·
