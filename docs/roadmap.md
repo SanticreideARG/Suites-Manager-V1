@@ -235,63 +235,71 @@ Ampliación (🔜/⏳):
   Ver análisis de carga de imágenes más abajo.
 
 ### Análisis — Carga de imágenes (logo y alojamientos) (⏳)
-- ⏳ **Análisis pendiente**: definir la estrategia de almacenamiento y upload para:
+- ⏳ **Estrategia de almacenamiento y upload** para:
   - Logo del alojamiento (desde Configuración).
-  - Fotos de cada unidad/alojamiento (para la ficha y el futuro portal).
-  
-  **Opciones a evaluar:**
-  - **Vercel Blob** (más simple, integra directo con el stack): upload firmado desde
-    la API, URL pública guardada en DB. Sin gestión de infra adicional.
-  - **Cloudflare R2** (más económico a escala, S3-compatible): requiere cuenta CF.
-  - **Supabase Storage** (si se evalúa mover parte del stack): alternativa.
-  
-  **Decisión a tomar:** servicio, tamaño máximo, formatos aceptados,
-  redimensionado/optimización (¿en cliente antes de subir, o en servidor?).
-  *Requiere cuestionario — ver al pie de este bloque.*
+  - Fotos de cada unidad/alojamiento (para la ficha y el portal público).
+
+  **Decisiones (2026-06-26):**
+  - **Servicio: Vercel Blob** — integra directo con el stack, sin cuenta extra.
+    Upload firmado desde la API; URL pública guardada en DB (`config.logoUrl`,
+    nueva columna `habitacion_fotos` o similar).
+  - **Máximo: 10 fotos** por unidad.
+  - **Optimización: en el cliente** (redimensionar/comprimir en el browser antes
+    de enviar — reduce ancho de banda y costo de almacenamiento).
+  - **Formatos: JPG y WebP** (si el browser lo soporta al comprimir); si no,
+    fallback a JPG solamente.
 
 ### Análisis — Multi-sucursal (⏳)
-- ⏳ **Análisis de segmentación por sucursal**: cómo gestionar múltiples propiedades
-  desde la misma instancia de la app, con:
-  - Calendarios y disponibilidad **independientes** por sucursal.
-  - Gestores asignados a una o más sucursales (no acceden a las demás).
-  - Clientes y reservas **por sucursal** o compartidos (a definir).
-  - Admin global con vista de todas.
-  
-  **Impacto en el modelo de datos**: prácticamente todas las tablas necesitarían
-  `sucursal_id` como foreign key (habitaciones, reservas, huéspedes, config, etc.).
-  Es un cambio estructural grande — conviene decidirlo **antes** de escalar otras
-  funcionalidades para no reescribir. *Requiere cuestionario.*
+- ⏳ **Análisis de segmentación por sucursal** — solo análisis por ahora; no se
+  implementa. Objetivo: que las decisiones de arquitectura actuales no bloqueen
+  el futuro.
+
+  **Decisiones (2026-06-26):**
+  - **Solo análisis** — no es un objetivo activo de corto plazo.
+  - Clientes/huéspedes **por sucursal** (sin mezcla entre propiedades).
+  - Gestores asignados a **una sola sucursal** (fijo; el admin lo configura).
+  - **Cada sucursal** tiene sus propios datos de empresa, logo, CUIT y numeración
+    de comprobantes (configuración completamente independiente).
+  - **Impacto de arquitectura a tener en cuenta**: prácticamente todas las tablas
+    necesitarían `sucursal_id` como FK. Conviene definir esto antes de escalar
+    el modelo de datos para evitar rewrites.
 
 ### Análisis — Ampliación de reportes (⏳)
-- ⏳ **Análisis pendiente**: qué métricas/vistas adicionales agregar. Las actuales son
-  ocupación, ingresos, reservas, noches, estadía promedio, cancelaciones, frecuentes
-  (por huésped). Posibles ampliaciones:
-  - Ingresos por categoría de cargo extra (Servicios, Consumos, etc.).
-  - Tasa de ocupación por habitación/tipo (no solo global).
-  - Comparación mes a mes / año a año.
-  - Huéspedes nuevos vs recurrentes.
-  - Forecast de ingresos (reservas futuras confirmadas).
-  - Export PDF del reporte (hoy solo Excel).
-  *Requiere cuestionario para priorizar qué métricas son más útiles.*
+- ⏳ **Métricas adicionales a implementar** (prioridad confirmada):
+  - **Tasa de ocupación por habitación/tipo** (no solo global).
+  - **Comparación mes a mes / año a año**.
+  - **Forecast de ingresos** (reservas futuras confirmadas).
+  - **Export PDF del reporte** (hoy solo Excel).
+  - *(Descartados por ahora: ingresos por cargo extra — depende de implementar
+    cargos; huéspedes nuevos vs recurrentes — menor prioridad.)*
+  - **Gráficos de barra/línea** para las métricas principales (dashboard ejecutivo).
 
-### Portal de clientes — website público (⏳, análisis + cuestionario)
+### Portal de clientes — website público (⏳)
 - ⏳ **Website público moderno** para que los clientes puedan:
-  - Cargar / actualizar sus datos personales.
-  - Consultar **disponibilidad por fecha** con vista de calendario o listado.
-  - Ver **precio estimado** (cotización con tarifas dinámicas).
+  - Navegar como **invitado** en la landing pública (sin login): ver
+    disponibilidad, precios, características y fotos de unidades.
+  - **Login requerido solo para reservar** (Google OAuth + email/password;
+    Better Auth ya está instalado, solo agregar Google provider).
+  - Cargar / actualizar sus datos personales (perfil de cliente).
+  - Consultar **disponibilidad por fecha** con cotización en **tiempo real**
+    (tarifas dinámicas, el cliente ve el precio final al elegir fechas).
+  - **Realizar reservas** online → quedan en estado "pendiente de confirmación";
+    el staff confirma desde el panel.
   - Ver **características y fotos** de cada unidad.
-  - **Realizar reservas** online (pendiente de confirmación por el staff, o
-    automática según config).
   - Historial de sus propias reservas y comprobantes.
-  
-  **Arquitectura probable**: sub-sitio separado del panel de gestión (o rutas
-  públicas `/portal/*` en el mismo repo), con endpoints públicos (disponibilidad,
-  cotizar, crear reserva). Auth con Google OAuth o email (rol `cliente`).
-  
-  **Ítems previos necesarios**: características de unidades, carga de imágenes,
-  Google OAuth para clientes.
-  
-  *Este ítem tiene su propio cuestionario — ver al pie.*
+
+  **Decisiones (2026-06-26):**
+  - **Arquitectura**: rutas públicas en el mismo dominio (`/portal`, `/reservar`,
+    etc.) — un solo deploy, sin subdominio adicional.
+  - **Auth**: Google OAuth + email/password. Invitado puede navegar la landing;
+    login solo requerido para reservar.
+  - **Confirmación**: reserva queda pendiente → el staff confirma desde el panel.
+  - **Diseño**: completamente diferente al panel — visual, con fotos grandes,
+    hero, orientado a la experiencia del huésped.
+  - **Datos mínimos para reservar**: nombre, email, fechas y unidad. Analizar
+    si el admin puede configurar campos adicionales obligatorios (dinámico).
+  - **Ítems previos necesarios**: características de unidades (catálogo),
+    carga de imágenes (Vercel Blob), Google OAuth.
 
 ---
 
