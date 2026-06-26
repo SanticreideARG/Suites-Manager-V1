@@ -15,7 +15,10 @@ import {
  * Nota: si Better Auth requiere transacciones interactivas (que el driver
  * neon-http no soporta), se le dará una instancia Drizzle propia con `pg`.
  */
-const esProd = (process.env.BETTER_AUTH_URL ?? "").startsWith("https");
+// Vercel pone NODE_ENV=production en las funciones; también vale si la URL es https.
+const esProd =
+  process.env.NODE_ENV === "production" ||
+  (process.env.BETTER_AUTH_URL ?? "").startsWith("https");
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {

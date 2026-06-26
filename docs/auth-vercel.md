@@ -86,12 +86,32 @@ Roles (detalle en [roadmap.md](./roadmap.md)):
 - Usuarios de prueba (se pueden borrar): `admin@suites.test`, `gestor@suites.test`,
   `cliente@suites.test`.
 
-## Si tras el Paso 1 el login sigue fallando en producción
-Es, casi seguro, tema de **cookies cross-site** (la web y el API están en dominios
-distintos). Ya están configuradas como `SameSite=None; Secure`, pero si el navegador
-las bloquea, las alternativas son:
-1. Servir web y API bajo el **mismo dominio** (p. ej. la web con un rewrite a la API
-   en `/api`), de modo que la cookie sea same-site.
-2. Usar **tokens Bearer** (plugin de Better Auth) en lugar de cookies.
+## Síntoma: "ingreso bien pero me vuelve al login"
+Es la **cookie de sesión cross-site** que el navegador no guarda/envía (web y API en
+dominios distintos de `vercel.app`). Antes la cookie salía `SameSite=Lax` (mal); ya se
+corrigió para que en producción salga **`SameSite=None; Secure`** (commit que detecta
+`NODE_ENV=production`). **Redeploy del proyecto API** y probá de nuevo.
 
-Avisá si pasa y lo resolvemos.
+### Si AÚN falla (navegador que bloquea cookies de terceros: Safari, Chrome estricto)
+La solución robusta es servir todo bajo **el mismo origen** (la cookie pasa a ser
+first-party). La web hace de proxy hacia la API:
+
+1. **`apps/web/vercel.json`** — agregar un rewrite (reemplazá por tu URL real de API):
+   ```json
+   {
+     "rewrites": [
+       { "source": "/backend/:path*",
+         "destination": "https://suites-manager-v1-api.vercel.app/:path*" }
+     ]
+   }
+   ```
+2. En el proyecto **web** (Vercel → Settings → Environment Variables) cambiar:
+   - `VITE_API_URL` = `/backend`  (relativo → mismo origen que la web)
+   - **Redeploy de la web** (Vite hornea la variable en build).
+
+Con esto el navegador solo habla con la web; la API queda detrás de `/backend` y la
+cookie es first-party (funciona en todos los navegadores). En el proyecto **API** dejá
+`WEB_URL` = URL de la web (para `trustedOrigins`).
+
+> Alternativa: tokens Bearer (plugin de Better Auth) en vez de cookies — más cambios de
+> código; lo hacemos si preferís no usar el proxy.
