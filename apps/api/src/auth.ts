@@ -50,7 +50,6 @@ export const auth = betterAuth({
     "http://localhost:5182",
     "http://localhost:5173",
     "https://suites-manager-v1-web.vercel.app",
-    "https://*.vercel.app", // cubre los deploys/preview de Vercel
     ...(process.env.WEB_URL ? [process.env.WEB_URL] : []),
   ],
   // En prod (https) la web y la API están en dominios distintos (cross-site):
