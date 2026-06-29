@@ -8,7 +8,7 @@ import logo from "../../assets/suites-man-logo.png";
 export function NavBar({ onOpenLogin }: { onOpenLogin: () => void }) {
   const [scrolled, setScrolled] = useState(false);
   const { data: session } = useSession();
-  const { tema } = useUi();
+  const { tema, toggleTema } = useUi();
   const navigate = useNavigate();
   const isDark = tema === "dark";
 
