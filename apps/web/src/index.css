@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Tailwind v4: usar clase .dark (toggle manual) en vez de @media prefers-color-scheme */
+@variant dark (&:where(.dark, .dark *));
+
 /* ============================================================
    Design tokens — un solo lugar para colores de superficie,
    bordes, texto y acción. Light por defecto; .dark los remapea.
