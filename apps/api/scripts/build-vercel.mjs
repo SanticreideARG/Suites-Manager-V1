@@ -22,6 +22,13 @@ await build({
   format: "esm",
   target: "node20",
   outfile: `${FN}/index.js`,
+  // Algunos paquetes CJS usan require("node:buffer") etc. en tiempo de ejecución.
+  // external: evita bundlear los built-ins de Node (se importan como ESM nativos).
+  // banner: provee require() via createRequire para dynamic requires residuales.
+  external: ["node:*"],
+  banner: {
+    js: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);",
+  },
 });
 
 // La función es ESM.
