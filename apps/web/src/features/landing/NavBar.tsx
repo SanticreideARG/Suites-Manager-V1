@@ -82,6 +82,15 @@ export function NavBar({ onOpenLogin }: { onOpenLogin: () => void }) {
 
         {/* CTA */}
         <div className="flex items-center gap-2">
+          {/* Toggle tema */}
+          <button
+            onClick={toggleTema}
+            title={tema === "dark" ? "Cambiar a tema claro" : "Cambiar a tema oscuro"}
+            className={`rounded-lg p-2 text-base transition hover:bg-white/10 ${linkClass}`}
+          >
+            {tema === "dark" ? "☀️" : "🌙"}
+          </button>
+
           {usandoMock ? (
             <button
               onClick={() => navigate("/panel")}
