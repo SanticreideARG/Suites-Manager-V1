@@ -12,10 +12,11 @@ export function LandingPage() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [filtroCapacidad, setFiltroCapacidad] = useState(0);
 
-  const { data: unidades, isLoading } = useQuery({
+  const { data: unidades, isLoading, isError } = useQuery({
     queryKey: ["landing.habitaciones"],
     queryFn: api.landing.habitaciones,
     staleTime: 5 * 60 * 1000,
+    retry: 2,
   });
 
   const unidadesFiltradas =
@@ -97,17 +98,35 @@ export function LandingPage() {
                   />
                 ))}
               </div>
+            ) : isError ? (
+              <div className="rounded-xl border border-slate-200 bg-white p-12 text-center dark:border-white/[0.08] dark:bg-white/[0.03]">
+                <p className="text-2xl mb-3">😕</p>
+                <p className="font-medium text-slate-700 dark:text-white/70">
+                  No se pudo cargar los alojamientos.
+                </p>
+                <p className="mt-1 text-sm text-slate-400 dark:text-white/30">
+                  Intentá recargar la página.
+                </p>
+              </div>
             ) : unidadesFiltradas.length === 0 ? (
               <div className="rounded-xl border border-slate-200 bg-white p-12 text-center dark:border-white/[0.08] dark:bg-white/[0.03]">
-                <p className="text-slate-500 dark:text-white/50">
-                  No hay alojamientos para {filtroCapacidad} personas.
-                </p>
-                <button
-                  onClick={() => setFiltroCapacidad(0)}
-                  className="mt-3 text-sm text-[#0058be] hover:text-[#2170e4]"
-                >
-                  Ver todos los alojamientos
-                </button>
+                {filtroCapacidad > 1 ? (
+                  <>
+                    <p className="text-slate-500 dark:text-white/50">
+                      No hay alojamientos disponibles para {filtroCapacidad} personas.
+                    </p>
+                    <button
+                      onClick={() => setFiltroCapacidad(0)}
+                      className="mt-3 text-sm text-[#0058be] hover:text-[#2170e4]"
+                    >
+                      Ver todos los alojamientos
+                    </button>
+                  </>
+                ) : (
+                  <p className="text-slate-500 dark:text-white/50">
+                    Próximamente disponibles.
+                  </p>
+                )}
               </div>
             ) : (
               <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
