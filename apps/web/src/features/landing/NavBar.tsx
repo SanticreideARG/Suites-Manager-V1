@@ -24,9 +24,9 @@ export function NavBar({ onOpenLogin }: { onOpenLogin: () => void }) {
 
   // Clases del contenedor según tema y estado de scroll
   const headerClass = isDark
-    ? "bg-[rgba(11,28,48,0.7)] backdrop-blur-md border-b border-white/10"
+    ? "bg-[rgba(11,28,48,0.7)] backdrop-blur-md"
     : scrolled
-      ? "border-b border-slate-200/40 bg-white/15 backdrop-blur-md"
+      ? "bg-white/15 backdrop-blur-md"
       : "bg-transparent";
 
   // Color del texto de los links según tema y scroll
