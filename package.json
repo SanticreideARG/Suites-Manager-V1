@@ -12,6 +12,7 @@
     "db:generate": "pnpm --filter @suites/db generate",
     "db:migrate": "pnpm --filter @suites/db migrate",
     "db:seed": "pnpm --filter @suites/db seed",
+    "db:reseed": "pnpm --filter @suites/db exec tsx src/reseed.ts",
     "db:promote": "pnpm --filter @suites/db exec tsx src/promote.ts",
     "db:push": "pnpm --filter @suites/db push",
     "db:studio": "pnpm --filter @suites/db studio",
