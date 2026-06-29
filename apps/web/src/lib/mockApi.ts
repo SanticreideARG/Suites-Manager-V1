@@ -12,6 +12,9 @@ import type {
   Amenidad,
   HabitacionAmenidad,
   HabitacionFoto,
+  LandingConfig,
+  LandingFoto,
+  LandingLink,
 } from "./types.js";
 import { ApiError } from "./types.js";
 import { addDays, diffDays } from "./fechas.js";
@@ -135,7 +138,27 @@ let configMock: Config = {
   telefono: "+54 9 11 0000-0000",
   email: "reservas@mialojamiento.com",
   logoUrl: null,
+  landingTagline: null,
+  landingSubtitulo: null,
+  landingCtaTexto: null,
+  landingCtaUrl: null,
 };
+
+// ---- Landing Manager (mock) ----
+let landingConfigMock: LandingConfig = {
+  landingTagline: "Tu descanso, nuestra prioridad",
+  landingSubtitulo: "Alojamientos únicos para experiencias únicas. Reservá online.",
+  landingCtaTexto: "Ver disponibilidad",
+  landingCtaUrl: "#disponibilidad",
+};
+let seqLandingFoto = 0;
+const landingFotosMock: LandingFoto[] = [];
+let seqLandingLink = 0;
+const landingLinksMock: LandingLink[] = [
+  { id: ++seqLandingLink, label: "Inicio", url: "#inicio", orden: 0, activa: true },
+  { id: ++seqLandingLink, label: "Alojamientos", url: "#alojamientos", orden: 1, activa: true },
+  { id: ++seqLandingLink, label: "Contacto", url: "#contacto", orden: 2, activa: true },
+];
 
 // ---- Fotos de habitaciones (mock) ----
 let seqFoto = 0;
@@ -462,6 +485,59 @@ export const mockApi: ApiClient = {
       const i = usuariosMock.findIndex((x) => x.id === id);
       if (i >= 0) usuariosMock.splice(i, 1);
       return delay({ ok: true } as const);
+    },
+  },
+  landingManager: {
+    getConfig: () => delay({ ...landingConfigMock }),
+    updateConfig: (data) => {
+      landingConfigMock = { ...landingConfigMock, ...data };
+      return delay({ ...landingConfigMock });
+    },
+    listFotos: () => delay([...landingFotosMock].sort((a, b) => a.orden - b.orden)),
+    uploadFoto: (file, altTexto) => {
+      const foto: LandingFoto = {
+        id: ++seqLandingFoto,
+        url: URL.createObjectURL(file),
+        altTexto: altTexto ?? null,
+        orden: landingFotosMock.length,
+        createdAt: new Date().toISOString(),
+      };
+      landingFotosMock.push(foto);
+      return delay(foto);
+    },
+    removeFoto: (id) => {
+      const i = landingFotosMock.findIndex((f) => f.id === id);
+      if (i >= 0) { landingFotosMock.splice(i, 1); landingFotosMock.forEach((f, idx) => { f.orden = idx; }); }
+      return delay({ ok: true } as const);
+    },
+    reorderFotos: (ids) => {
+      ids.forEach((id, idx) => { const f = landingFotosMock.find((x) => x.id === id); if (f) f.orden = idx; });
+      landingFotosMock.sort((a, b) => a.orden - b.orden);
+      return delay([...landingFotosMock]);
+    },
+    listLinks: () => delay([...landingLinksMock].sort((a, b) => a.orden - b.orden)),
+    createLink: (data) => {
+      const link: LandingLink = { id: ++seqLandingLink, label: data.label, url: data.url, orden: landingLinksMock.length, activa: data.activa ?? true };
+      landingLinksMock.push(link);
+      return delay(link);
+    },
+    updateLink: (id, data) => {
+      const l = landingLinksMock.find((x) => x.id === id);
+      if (!l) return Promise.reject(new ApiError(404, "No encontrado"));
+      if (data.label !== undefined) l.label = data.label;
+      if (data.url !== undefined) l.url = data.url;
+      if (data.activa !== undefined) l.activa = data.activa;
+      return delay({ ...l });
+    },
+    removeLink: (id) => {
+      const i = landingLinksMock.findIndex((x) => x.id === id);
+      if (i >= 0) { landingLinksMock.splice(i, 1); landingLinksMock.forEach((l, idx) => { l.orden = idx; }); }
+      return delay({ ok: true } as const);
+    },
+    reorderLinks: (ids) => {
+      ids.forEach((id, idx) => { const l = landingLinksMock.find((x) => x.id === id); if (l) l.orden = idx; });
+      landingLinksMock.sort((a, b) => a.orden - b.orden);
+      return delay([...landingLinksMock]);
     },
   },
   reportes: {

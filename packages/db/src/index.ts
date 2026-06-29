@@ -33,6 +33,8 @@ export {
   amenidades,
   habitacionAmenidades,
   habitacionFotos,
+  landingFotos,
+  landingLinks,
   authUser,
   authSession,
   authAccount,
@@ -47,6 +49,8 @@ export type {
   Amenidad,
   HabitacionAmenidad,
   HabitacionFoto,
+  LandingFoto,
+  LandingLink,
 } from "./schema.js";
 
 // Operadores de Drizzle (una sola instancia; ver nota en package del repo).

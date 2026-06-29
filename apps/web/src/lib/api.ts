@@ -12,6 +12,9 @@ import type {
   AmenidadCreate,
   AmenidadUpdate,
   HabitacionAmenidadesSet,
+  LandingConfigUpdate,
+  LandingLinkCreate,
+  LandingLinkUpdate,
 } from "@suites/shared";
 import type {
   ApiClient,
@@ -29,6 +32,9 @@ import type {
   Amenidad,
   HabitacionAmenidad,
   HabitacionFoto,
+  LandingConfig,
+  LandingFoto,
+  LandingLink,
 } from "./types.js";
 import { ApiError } from "./types.js";
 import { mockApi } from "./mockApi.js";
@@ -50,6 +56,9 @@ export type {
   Amenidad,
   HabitacionAmenidad,
   HabitacionFoto,
+  LandingConfig,
+  LandingFoto,
+  LandingLink,
 };
 
 const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
@@ -150,6 +159,32 @@ const realApi: ApiClient = {
         method: "PUT",
         body: JSON.stringify(data),
       }),
+  },
+  landingManager: {
+    getConfig: () => request<LandingConfig | null>("/landing-manager/config"),
+    updateConfig: (data: LandingConfigUpdate) =>
+      request<LandingConfig>("/landing-manager/config", { method: "PUT", body: JSON.stringify(data) }),
+    listFotos: () => request<LandingFoto[]>("/landing-manager/fotos"),
+    uploadFoto: (file: File, altTexto?: string) => {
+      const form = new FormData();
+      form.append("file", file);
+      if (altTexto) form.append("altTexto", altTexto);
+      return fetch(`${BASE}/landing-manager/fotos`, { method: "POST", body: form, credentials: "include" })
+        .then(async (r) => { if (!r.ok) { const b = await r.json().catch(() => ({})); throw new ApiError(r.status, b.message ?? r.statusText, b.error); } return r.json() as Promise<LandingFoto>; });
+    },
+    removeFoto: (id: number) =>
+      request<{ ok: true }>(`/landing-manager/fotos/${id}`, { method: "DELETE" }),
+    reorderFotos: (ids: number[]) =>
+      request<LandingFoto[]>("/landing-manager/fotos/orden", { method: "PATCH", body: JSON.stringify({ ids }) }),
+    listLinks: () => request<LandingLink[]>("/landing-manager/links"),
+    createLink: (data: LandingLinkCreate) =>
+      request<LandingLink>("/landing-manager/links", { method: "POST", body: JSON.stringify(data) }),
+    updateLink: (id: number, data: LandingLinkUpdate) =>
+      request<LandingLink>(`/landing-manager/links/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+    removeLink: (id: number) =>
+      request<{ ok: true }>(`/landing-manager/links/${id}`, { method: "DELETE" }),
+    reorderLinks: (ids: number[]) =>
+      request<LandingLink[]>("/landing-manager/links/orden", { method: "PATCH", body: JSON.stringify({ ids }) }),
   },
   reportes: {
     resumen: (desde: string, hasta: string) =>

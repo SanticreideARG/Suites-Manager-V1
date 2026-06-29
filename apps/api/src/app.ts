@@ -10,6 +10,7 @@ import { configRoutes } from "./routes/config.js";
 import { usuariosRoutes } from "./routes/usuarios.js";
 import { publicRoutes } from "./routes/public.js";
 import { amenidadesRoutes } from "./routes/amenidades.js";
+import { landingManagerRoutes } from "./routes/landingManager.js";
 import { auth } from "./auth.js";
 
 /** App Hono sin servidor: la consume server.ts (local) y api/index.ts (Vercel). */
@@ -40,6 +41,7 @@ app.route("/tarifas", tarifasRoutes);
 app.route("/config", configRoutes);
 app.route("/usuarios", usuariosRoutes);
 app.route("/amenidades", amenidadesRoutes);
+app.route("/landing-manager", landingManagerRoutes);
 app.route("/public", publicRoutes);
 
 export default app;

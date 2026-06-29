@@ -130,6 +130,28 @@ export const config = pgTable("config", {
   telefono: varchar("telefono", { length: 40 }),
   email: varchar("email", { length: 160 }),
   logoUrl: text("logo_url"),
+  // Landing page
+  landingTagline: varchar("landing_tagline", { length: 200 }),
+  landingSubtitulo: varchar("landing_subtitulo", { length: 400 }),
+  landingCtaTexto: varchar("landing_cta_texto", { length: 80 }),
+  landingCtaUrl: varchar("landing_cta_url", { length: 200 }),
+});
+
+// ---------- Landing Manager ----------
+export const landingFotos = pgTable("landing_fotos", {
+  id: serial("id").primaryKey(),
+  url: text("url").notNull(),
+  altTexto: varchar("alt_texto", { length: 200 }),
+  orden: integer("orden").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const landingLinks = pgTable("landing_links", {
+  id: serial("id").primaryKey(),
+  label: varchar("label", { length: 120 }).notNull(),
+  url: varchar("url", { length: 300 }).notNull(),
+  orden: integer("orden").notNull().default(0),
+  activa: boolean("activa").notNull().default(true),
 });
 
 // ---------- Fotos de alojamiento (URLs en Vercel Blob) ----------
@@ -231,3 +253,5 @@ export type TarifaRegla = typeof tarifaReglas.$inferSelect;
 export type Amenidad = typeof amenidades.$inferSelect;
 export type HabitacionAmenidad = typeof habitacionAmenidades.$inferSelect;
 export type HabitacionFoto = typeof habitacionFotos.$inferSelect;
+export type LandingFoto = typeof landingFotos.$inferSelect;
+export type LandingLink = typeof landingLinks.$inferSelect;

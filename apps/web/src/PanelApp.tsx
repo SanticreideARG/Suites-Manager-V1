@@ -13,16 +13,22 @@ import { ReportesPage } from "./features/reportes/ReportesPage.js";
 import { TarifasPage } from "./features/tarifas/TarifasPage.js";
 import { ProximosPanel } from "./features/dashboard/ProximosPanel.js";
 import { ConfiguracionPage } from "./features/configuracion/ConfiguracionPage.js";
+import { LandingManagerPage } from "./features/landing-manager/LandingManagerPage.js";
 import { useSession, signOut } from "./lib/auth.js";
 import logo from "./assets/suites-man-logo.png";
 
-type Vista = "calendario" | "huespedes" | "reportes" | "tarifas" | "config";
+type Vista = "calendario" | "huespedes" | "reportes" | "tarifas" | "landing" | "config";
 
 interface NavDef {
   id: Vista;
   label: string;
   icon: React.ReactNode;
   soloAdmin?: boolean;
+}
+
+interface NavGroup {
+  label?: string;
+  items: NavDef[];
 }
 
 export function PanelApp() {
@@ -57,22 +63,43 @@ export function PanelApp() {
     return <Navigate to="/" replace />;
   }
 
-  const items = NAV.filter((n) => !n.soloAdmin || esAdmin);
+  const groups: NavGroup[] = [
+    {
+      items: NAV_MAIN,
+    },
+    {
+      label: "Administración",
+      items: NAV_ADMIN.filter((n) => !n.soloAdmin || esAdmin),
+    },
+  ].filter((g) => g.items.length > 0);
+
+  const allItems = groups.flatMap((g) => g.items);
 
   return (
     <div className="min-h-screen md:pl-64">
       {/* Sidebar (desktop) */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-slate-200 bg-white md:flex">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 md:flex">
         <Brand nombre={appNombre} />
-        <nav className="flex-1 space-y-1 px-3 py-4">
-          {items.map((n) => (
-            <NavButton
-              key={n.id}
-              icon={n.icon}
-              label={n.label}
-              activa={vista === n.id}
-              onClick={() => setVista(n.id)}
-            />
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-4">
+          {groups.map((group, gi) => (
+            <div key={gi}>
+              {group.label && (
+                <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                  {group.label}
+                </p>
+              )}
+              <div className="space-y-0.5">
+                {group.items.map((n) => (
+                  <NavButton
+                    key={n.id}
+                    icon={n.icon}
+                    label={n.label}
+                    activa={vista === n.id}
+                    onClick={() => setVista(n.id)}
+                  />
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
         <SidebarFooter
@@ -84,10 +111,10 @@ export function PanelApp() {
       </aside>
 
       {/* Topbar (mobile) */}
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 md:hidden">
+      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-900 md:hidden">
         <div className="flex items-center gap-2">
           <img src={logo} alt="" className="h-8 w-8 rounded-lg" />
-          <span className="font-bold text-slate-800">{appNombre}</span>
+          <span className="font-bold text-slate-800 dark:text-slate-100">{appNombre}</span>
         </div>
         <div className="flex items-center gap-1">
           <IconBtn onClick={toggleTema} title="Cambiar tema">
@@ -100,14 +127,14 @@ export function PanelApp() {
           )}
         </div>
       </header>
-      <nav className="flex gap-1 overflow-x-auto border-b border-slate-200 bg-white px-2 py-2 md:hidden">
-        {items.map((n) => (
+      <nav className="flex gap-1 overflow-x-auto border-b border-slate-200 bg-white px-2 py-2 dark:border-slate-700 dark:bg-slate-900 md:hidden">
+        {allItems.map((n) => (
           <button
             key={n.id}
             onClick={() => setVista(n.id)}
             className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium ${
               vista === n.id
-                ? "bg-slate-100 text-slate-800"
+                ? "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-100"
                 : "text-slate-500"
             }`}
           >
@@ -125,14 +152,15 @@ export function PanelApp() {
           </div>
         )}
 
-        <h1 className="mb-5 text-2xl font-bold tracking-tight text-slate-800">
-          {items.find((n) => n.id === vista)?.label}
+        <h1 className="mb-5 text-2xl font-bold tracking-tight text-slate-800 dark:text-slate-100">
+          {allItems.find((n) => n.id === vista)?.label}
         </h1>
 
         {vista === "calendario" && <CalendarioView />}
         {vista === "huespedes" && <HuespedesPage />}
         {vista === "reportes" && esAdmin && <ReportesPage />}
         {vista === "tarifas" && esAdmin && <TarifasPage />}
+        {vista === "landing" && esAdmin && <LandingManagerPage />}
         {vista === "config" && esAdmin && <ConfiguracionPage />}
       </main>
     </div>
@@ -446,10 +474,21 @@ const iconLogout = (
   </svg>
 );
 
-const NAV: NavDef[] = [
+const iconLanding = (
+  <svg {...svgProps}>
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <path d="M3 9h18M9 21V9" />
+  </svg>
+);
+
+const NAV_MAIN: NavDef[] = [
   { id: "calendario", label: "Calendario", icon: iconCalendar },
   { id: "huespedes", label: "Huéspedes", icon: iconUsers },
+];
+
+const NAV_ADMIN: NavDef[] = [
   { id: "reportes", label: "Reportes", icon: iconChart, soloAdmin: true },
   { id: "tarifas", label: "Tarifas", icon: iconTag, soloAdmin: true },
+  { id: "landing", label: "Landing", icon: iconLanding, soloAdmin: true },
   { id: "config", label: "Configuración", icon: iconSettings, soloAdmin: true },
 ];

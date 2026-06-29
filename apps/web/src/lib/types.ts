@@ -89,6 +89,33 @@ export interface Config {
   telefono: string | null;
   email: string | null;
   logoUrl: string | null;
+  landingTagline: string | null;
+  landingSubtitulo: string | null;
+  landingCtaTexto: string | null;
+  landingCtaUrl: string | null;
+}
+
+export interface LandingConfig {
+  landingTagline: string | null;
+  landingSubtitulo: string | null;
+  landingCtaTexto: string | null;
+  landingCtaUrl: string | null;
+}
+
+export interface LandingFoto {
+  id: number;
+  url: string;
+  altTexto: string | null;
+  orden: number;
+  createdAt: string;
+}
+
+export interface LandingLink {
+  id: number;
+  label: string;
+  url: string;
+  orden: number;
+  activa: boolean;
 }
 
 export interface Usuario {
@@ -210,6 +237,19 @@ export interface ApiClient {
       habitacionId: number,
       data: import("@suites/shared").HabitacionAmenidadesSet,
     ) => Promise<HabitacionAmenidad[]>;
+  };
+  landingManager: {
+    getConfig: () => Promise<LandingConfig | null>;
+    updateConfig: (data: import("@suites/shared").LandingConfigUpdate) => Promise<LandingConfig>;
+    listFotos: () => Promise<LandingFoto[]>;
+    uploadFoto: (file: File, altTexto?: string) => Promise<LandingFoto>;
+    removeFoto: (id: number) => Promise<{ ok: true }>;
+    reorderFotos: (ids: number[]) => Promise<LandingFoto[]>;
+    listLinks: () => Promise<LandingLink[]>;
+    createLink: (data: import("@suites/shared").LandingLinkCreate) => Promise<LandingLink>;
+    updateLink: (id: number, data: import("@suites/shared").LandingLinkUpdate) => Promise<LandingLink>;
+    removeLink: (id: number) => Promise<{ ok: true }>;
+    reorderLinks: (ids: number[]) => Promise<LandingLink[]>;
   };
   reportes: {
     resumen: (desde: string, hasta: string) => Promise<ReporteResumen>;

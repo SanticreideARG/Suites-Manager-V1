@@ -149,6 +149,32 @@ export const configUpdate = z.object({
 });
 export type ConfigUpdate = z.infer<typeof configUpdate>;
 
+// ---------- Landing Manager ----------
+export const landingConfigUpdate = z.object({
+  landingTagline: z.string().max(200).nullable().optional(),
+  landingSubtitulo: z.string().max(400).nullable().optional(),
+  landingCtaTexto: z.string().max(80).nullable().optional(),
+  landingCtaUrl: z.string().max(200).nullable().optional(),
+});
+export type LandingConfigUpdate = z.infer<typeof landingConfigUpdate>;
+
+export const landingLinkCreate = z.object({
+  label: z.string().min(1).max(120),
+  url: z.string().min(1).max(300),
+  activa: z.boolean().optional(),
+});
+export type LandingLinkCreate = z.infer<typeof landingLinkCreate>;
+
+export const landingLinkUpdate = z.object({
+  label: z.string().min(1).max(120).optional(),
+  url: z.string().min(1).max(300).optional(),
+  activa: z.boolean().optional(),
+});
+export type LandingLinkUpdate = z.infer<typeof landingLinkUpdate>;
+
+export const landingLinksOrden = z.object({ ids: z.array(z.number()) });
+export type LandingLinksOrden = z.infer<typeof landingLinksOrden>;
+
 // ---------- Amenidades (catálogo de características) ----------
 export const tipoAmenidad = z.enum(["bool", "texto", "numero"]);
 export type TipoAmenidad = z.infer<typeof tipoAmenidad>;

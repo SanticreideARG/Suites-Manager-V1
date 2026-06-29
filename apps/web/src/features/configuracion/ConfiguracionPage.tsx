@@ -5,6 +5,16 @@ import { HabitacionesAdmin } from "./HabitacionesAdmin.js";
 import { AmenidadesAdmin } from "./AmenidadesAdmin.js";
 import { UsuariosAdmin } from "./UsuariosAdmin.js";
 
+type Tab = "datos" | "logo" | "alojamientos" | "caracteristicas" | "usuarios";
+
+const TABS: { id: Tab; label: string }[] = [
+  { id: "datos", label: "Datos" },
+  { id: "logo", label: "Logo" },
+  { id: "alojamientos", label: "Alojamientos" },
+  { id: "caracteristicas", label: "Características" },
+  { id: "usuarios", label: "Usuarios" },
+];
+
 const campos = [
   ["nombre", "Nombre"],
   ["razonSocial", "Razón social"],
@@ -21,16 +31,42 @@ const campos = [
 type Campo = (typeof campos)[number][0];
 
 export function ConfiguracionPage() {
+  const [tab, setTab] = useState<Tab>("datos");
+
+  return (
+    <div className="space-y-6">
+      {/* Tab bar */}
+      <div className="flex flex-wrap gap-1 rounded-xl bg-slate-100 p-1 w-fit dark:bg-slate-800">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
+              tab === t.id
+                ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-slate-100"
+                : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "datos" && <DatosTab />}
+      {tab === "logo" && <LogoTab />}
+      {tab === "alojamientos" && <HabitacionesAdmin />}
+      {tab === "caracteristicas" && <AmenidadesAdmin />}
+      {tab === "usuarios" && <UsuariosAdmin />}
+    </div>
+  );
+}
+
+// ── Datos del alojamiento ────────────────────────────────────────
+function DatosTab() {
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ["config"], queryFn: api.config.get });
   const [form, setForm] = useState<Record<Campo, string>>({} as Record<Campo, string>);
   const [guardado, setGuardado] = useState(false);
-
-  // Logo upload state
-  const logoInputRef = useRef<HTMLInputElement>(null);
-  const [logoSubiendo, setLogoSubiendo] = useState(false);
-  const [logoError, setLogoError] = useState<string | null>(null);
-  const [logoGuardado, setLogoGuardado] = useState(false);
 
   useEffect(() => {
     if (!q.data) return;
@@ -55,114 +91,108 @@ export function ConfiguracionPage() {
     },
   });
 
+  if (q.isLoading) return <p className="text-sm text-slate-400">Cargando…</p>;
+
+  return (
+    <div className="max-w-2xl space-y-5">
+      <p className="text-sm text-slate-400">
+        Se usan en los comprobantes y la facturación.
+      </p>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {campos.map(([k, label]) => (
+          <label key={k} className="block text-sm">
+            <span className="text-slate-600 dark:text-slate-300">{label}</span>
+            <input
+              value={form[k] ?? ""}
+              onChange={(e) => setForm((s) => ({ ...s, [k]: e.target.value }))}
+              className="mt-1 w-full rounded border border-slate-300 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+            />
+          </label>
+        ))}
+      </div>
+      <div className="flex items-center gap-3">
+        <button
+          disabled={guardar.isPending}
+          onClick={() => guardar.mutate()}
+          className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50 dark:bg-slate-600"
+        >
+          {guardar.isPending ? "Guardando…" : "Guardar"}
+        </button>
+        {guardado && <span className="text-sm text-emerald-600">✓ Guardado</span>}
+        {guardar.isError && <span className="text-sm text-rose-600">No se pudo guardar.</span>}
+      </div>
+    </div>
+  );
+}
+
+// ── Logo ─────────────────────────────────────────────────────────
+function LogoTab() {
+  const qc = useQueryClient();
+  const q = useQuery({ queryKey: ["config"], queryFn: api.config.get });
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const [subiendo, setSubiendo] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [guardado, setGuardado] = useState(false);
+
   async function handleLogo(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setLogoError(null);
-    setLogoGuardado(false);
-    setLogoSubiendo(true);
+    setError(null);
+    setGuardado(false);
+    setSubiendo(true);
     try {
       await api.config.uploadLogo(file);
       qc.invalidateQueries({ queryKey: ["config"] });
-      setLogoGuardado(true);
-      setTimeout(() => setLogoGuardado(false), 2500);
+      setGuardado(true);
+      setTimeout(() => setGuardado(false), 2500);
     } catch {
-      setLogoError("No se pudo subir el logo. Intentá de nuevo.");
+      setError("No se pudo subir el logo. Intentá de nuevo.");
     } finally {
-      setLogoSubiendo(false);
+      setSubiendo(false);
       if (logoInputRef.current) logoInputRef.current.value = "";
     }
   }
 
-  if (q.isLoading) return <p className="text-sm text-slate-400">Cargando…</p>;
-
   const logoUrl = q.data?.logoUrl ?? null;
 
   return (
-    <div className="space-y-10">
-      <section className="max-w-2xl">
-        <h2 className="mb-1 text-lg font-semibold text-slate-800">
-          Datos del alojamiento
-        </h2>
-        <p className="mb-4 text-sm text-slate-400">
-          Se usan en los comprobantes y la facturación.
-        </p>
-
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {campos.map(([k, label]) => (
-            <label key={k} className="block text-sm">
-              <span className="text-slate-600">{label}</span>
-              <input
-                value={form[k] ?? ""}
-                onChange={(e) => setForm((s) => ({ ...s, [k]: e.target.value }))}
-                className="mt-1 w-full rounded border border-slate-300 px-2 py-1.5"
-              />
-            </label>
-          ))}
-        </div>
-
-        <div className="mt-4 flex items-center gap-3">
-          <button
-            disabled={guardar.isPending}
-            onClick={() => guardar.mutate()}
-            className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
-          >
-            {guardar.isPending ? "Guardando…" : "Guardar"}
-          </button>
-          {guardado && (
-            <span className="text-sm text-emerald-600">✓ Guardado</span>
-          )}
-          {guardar.isError && (
-            <span className="text-sm text-rose-600">No se pudo guardar.</span>
-          )}
-        </div>
-      </section>
-
-      <section className="max-w-2xl">
-        <h2 className="mb-1 text-lg font-semibold text-slate-800">Logo</h2>
-        <p className="mb-4 text-sm text-slate-400">
-          Se muestra en el panel y en los comprobantes. Se reemplaza al subir uno nuevo.
-        </p>
-        <div className="flex items-center gap-5">
-          {logoUrl ? (
-            <img
-              src={logoUrl}
-              alt="Logo actual"
-              className="h-16 w-auto rounded border border-slate-200 object-contain bg-white p-1"
-            />
-          ) : (
-            <div className="h-16 w-24 rounded border border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-xs">
-              Sin logo
-            </div>
-          )}
-          <div className="space-y-1">
-            <button
-              type="button"
-              onClick={() => logoInputRef.current?.click()}
-              disabled={logoSubiendo}
-              className="rounded-lg bg-slate-800 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
-            >
-              {logoSubiendo ? "Subiendo…" : logoUrl ? "Reemplazar logo" : "Subir logo"}
-            </button>
-            {logoGuardado && <p className="text-sm text-emerald-600">✓ Logo actualizado</p>}
-            {logoError && <p className="text-sm text-rose-600">{logoError}</p>}
-            <p className="text-xs text-slate-400">PNG, JPG o SVG. Recomendado: fondo transparente.</p>
+    <div className="max-w-lg space-y-5">
+      <p className="text-sm text-slate-400">
+        Se muestra en el panel y en los comprobantes. Se reemplaza al subir uno nuevo.
+      </p>
+      <div className="flex items-center gap-6">
+        {logoUrl ? (
+          <img
+            src={logoUrl}
+            alt="Logo actual"
+            className="h-20 w-auto rounded-xl border border-slate-200 object-contain bg-white p-2 dark:border-slate-700"
+          />
+        ) : (
+          <div className="h-20 w-28 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 text-xs">
+            Sin logo
           </div>
+        )}
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={() => logoInputRef.current?.click()}
+            disabled={subiendo}
+            className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50 dark:bg-slate-600"
+          >
+            {subiendo ? "Subiendo…" : logoUrl ? "Reemplazar logo" : "Subir logo"}
+          </button>
+          {guardado && <p className="text-sm text-emerald-600">✓ Logo actualizado</p>}
+          {error && <p className="text-sm text-rose-600">{error}</p>}
+          <p className="text-xs text-slate-400">PNG, JPG o SVG. Recomendado: fondo transparente.</p>
         </div>
-        <input
-          ref={logoInputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={handleLogo}
-        />
-      </section>
-
-      <HabitacionesAdmin />
-
-      <AmenidadesAdmin />
-
-      <UsuariosAdmin />
+      </div>
+      <input
+        ref={logoInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleLogo}
+      />
     </div>
   );
 }
