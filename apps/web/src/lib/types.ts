@@ -156,11 +156,38 @@ export interface ReporteResumen {
   estadiaPromedio: number;
   porHabitacion: {
     habitacion: string;
+    tipo: string;
     reservas: number;
     noches: number;
     ingresos: number;
+    ocupacionPct: number;
   }[];
   frecuentes: { huesped: string; estadias: number; total: number }[];
+}
+
+export interface ReporteComparativa {
+  periodo1: { desde: string; hasta: string; dias: number };
+  periodo2: { desde: string; hasta: string; dias: number };
+  metricas: {
+    ingresos: [number, number];
+    reservas: [number, number];
+    ocupacionPct: [number, number];
+    nochesOcupadas: [number, number];
+    cancelaciones: [number, number];
+    estadiaPromedio: [number, number];
+  };
+}
+
+export interface ReporteForecast {
+  diasHorizonte: number;
+  ingresosFuturos: number;
+  reservasFuturas: number;
+  porHabitacion: {
+    habitacion: string;
+    ingresos: number;
+    noches: number;
+    reservas: number;
+  }[];
 }
 
 export interface PublicHabitacion {
@@ -253,6 +280,8 @@ export interface ApiClient {
   };
   reportes: {
     resumen: (desde: string, hasta: string) => Promise<ReporteResumen>;
+    comparativa: (desde1: string, hasta1: string, desde2: string, hasta2: string) => Promise<ReporteComparativa>;
+    forecast: (dias: number) => Promise<ReporteForecast>;
   };
   usuarios: {
     list: () => Promise<Usuario[]>;

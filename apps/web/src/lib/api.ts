@@ -24,6 +24,8 @@ import type {
   HistorialItem,
   ReservaListItem,
   ReporteResumen,
+  ReporteComparativa,
+  ReporteForecast,
   TarifaRegla,
   Cotizacion,
   Config,
@@ -50,6 +52,8 @@ export type {
   TarifaRegla,
   Cotizacion,
   ReporteResumen,
+  ReporteComparativa,
+  ReporteForecast,
   Config,
   Usuario,
   PublicHabitacion,
@@ -188,9 +192,13 @@ const realApi: ApiClient = {
   },
   reportes: {
     resumen: (desde: string, hasta: string) =>
-      request<ReporteResumen>(
-        `/reportes/resumen?desde=${desde}&hasta=${hasta}`,
+      request<ReporteResumen>(`/reportes/resumen?desde=${desde}&hasta=${hasta}`),
+    comparativa: (desde1: string, hasta1: string, desde2: string, hasta2: string) =>
+      request<ReporteComparativa>(
+        `/reportes/comparativa?desde1=${desde1}&hasta1=${hasta1}&desde2=${desde2}&hasta2=${hasta2}`,
       ),
+    forecast: (dias: number) =>
+      request<ReporteForecast>(`/reportes/forecast?dias=${dias}`),
   },
   config: {
     get: () => request<Config | null>("/config"),

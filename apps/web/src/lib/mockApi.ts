@@ -5,6 +5,8 @@ import type {
   HuespedAlojado,
   ReservaListItem,
   ReporteResumen,
+  ReporteComparativa,
+  ReporteForecast,
   TarifaRegla,
   Config,
   Usuario,
@@ -564,11 +566,14 @@ export const mockApi: ApiClient = {
       const porHabitacion = habitaciones
         .map((h) => {
           const rs = delPeriodo.filter((r) => r.habitacionId === h.id);
+          const noches = rs.reduce((a, r) => a + diffDays(r.checkin, r.checkout), 0);
           return {
             habitacion: h.nombre,
+            tipo: h.tipo,
             reservas: rs.length,
-            noches: rs.reduce((a, r) => a + diffDays(r.checkin, r.checkout), 0),
+            noches,
             ingresos: rs.reduce((a, r) => a + Number(r.total), 0),
+            ocupacionPct: dias > 0 ? Math.round((noches / dias) * 1000) / 10 : 0,
           };
         })
         .sort((a, b) => b.ingresos - a.ingresos);
@@ -618,6 +623,52 @@ export const mockApi: ApiClient = {
         estadiaPromedio,
         porHabitacion,
         frecuentes,
+      };
+      return delay(res);
+    },
+    comparativa: (desde1, hasta1, desde2, hasta2) => {
+      // Reutiliza la misma lógica del resumen para dos períodos
+      const calcPeriodo = (d: string, h: string) => {
+        const dias = Math.max(1, diffDays(d, h));
+        const activos = reservas.filter((r) => r.estado !== "cancelada" && r.estado !== "mantenimiento");
+        const overlap = (ci: string, co: string) => { const s = ci > d ? ci : d; const e = co < h ? co : h; const n = diffDays(s, e); return n > 0 ? n : 0; };
+        const noches = activos.reduce((a, r) => a + overlap(r.checkin, r.checkout), 0);
+        const delP = activos.filter((r) => r.checkin >= d && r.checkin < h);
+        const ingresos = delP.reduce((a, r) => a + Number(r.total), 0);
+        const cancelaciones = reservas.filter((r) => r.estado === "cancelada" && r.checkin >= d && r.checkin < h).length;
+        const nochesTotal = delP.reduce((a, r) => a + diffDays(r.checkin, r.checkout), 0);
+        return { dias, noches, ingresos, reservas: delP.length, cancelaciones, estadiaPromedio: delP.length > 0 ? Math.round(nochesTotal / delP.length * 10) / 10 : 0, ocupacionPct: habitaciones.length * dias > 0 ? Math.round(noches / (habitaciones.length * dias) * 1000) / 10 : 0 };
+      };
+      const p1 = calcPeriodo(desde1, hasta1);
+      const p2 = calcPeriodo(desde2, hasta2);
+      const res: ReporteComparativa = {
+        periodo1: { desde: desde1, hasta: hasta1, dias: p1.dias },
+        periodo2: { desde: desde2, hasta: hasta2, dias: p2.dias },
+        metricas: {
+          ingresos: [p1.ingresos, p2.ingresos],
+          reservas: [p1.reservas, p2.reservas],
+          ocupacionPct: [p1.ocupacionPct, p2.ocupacionPct],
+          nochesOcupadas: [p1.noches, p2.noches],
+          cancelaciones: [p1.cancelaciones, p2.cancelaciones],
+          estadiaPromedio: [p1.estadiaPromedio, p2.estadiaPromedio],
+        },
+      };
+      return delay(res);
+    },
+    forecast: (dias) => {
+      const hoy = new Date().toISOString().slice(0, 10);
+      const limite = new Date(); limite.setDate(limite.getDate() + dias);
+      const limStr = limite.toISOString().slice(0, 10);
+      const futuras = reservas.filter((r) => ["reservada", "ocupada"].includes(r.estado) && r.checkout > hoy && r.checkin < limStr);
+      const porHab = habitaciones.map((h) => {
+        const rs = futuras.filter((r) => r.habitacionId === h.id);
+        return { habitacion: h.nombre, ingresos: rs.reduce((a, r) => a + Number(r.total), 0), noches: rs.reduce((a, r) => a + diffDays(r.checkin, r.checkout), 0), reservas: rs.length };
+      }).filter((h) => h.reservas > 0).sort((a, b) => b.ingresos - a.ingresos);
+      const res: ReporteForecast = {
+        diasHorizonte: dias,
+        ingresosFuturos: porHab.reduce((a, h) => a + h.ingresos, 0),
+        reservasFuturas: futuras.length,
+        porHabitacion: porHab,
       };
       return delay(res);
     },
