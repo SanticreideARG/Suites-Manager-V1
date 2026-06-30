@@ -17,6 +17,8 @@ import { pagosRoutes } from "./routes/pagos.js";
 import { housekeepingRoutes } from "./routes/housekeeping.js";
 import { serviciosRoutes } from "./routes/servicios.js";
 import { consumosRoutes } from "./routes/consumos.js";
+import { landingServiciosRoutes } from "./routes/landingServicios.js";
+import { landingContactosRoutes } from "./routes/landingContactos.js";
 import { auth } from "./auth.js";
 
 /** App Hono sin servidor: la consume server.ts (local) y api/index.ts (Vercel). */
@@ -54,6 +56,8 @@ app.route("/pagos", pagosRoutes);
 app.route("/housekeeping", housekeepingRoutes);
 app.route("/servicios", serviciosRoutes);
 app.route("/consumos", consumosRoutes);
+app.route("/landing-servicios", landingServiciosRoutes);
+app.route("/landing-contactos", landingContactosRoutes);
 app.route("/public", publicRoutes);
 
 export default app;

@@ -5,7 +5,15 @@ import { useUi } from "../../store/ui.js";
 import { usandoMock } from "../../lib/api.js";
 import logo from "../../assets/suites-man-logo.png";
 
-export function NavBar({ onOpenLogin }: { onOpenLogin: () => void }) {
+export function NavBar({
+  onOpenLogin,
+  onOpenServicios,
+  onOpenContacto,
+}: {
+  onOpenLogin: () => void;
+  onOpenServicios: () => void;
+  onOpenContacto: () => void;
+}) {
   const [scrolled, setScrolled] = useState(false);
   const { data: session } = useSession();
   const { tema, toggleTema } = useUi();
@@ -58,26 +66,29 @@ export function NavBar({ onOpenLogin }: { onOpenLogin: () => void }) {
 
         {/* Nav links (desktop) */}
         <nav className="hidden items-center gap-7 md:flex">
-          {(
-            [
-              ["Inicio", "#", true],
-              ["Alojamientos", "#alojamientos", false],
-              ["Servicios", "#alojamientos", false],
-              ["Contacto", "#contacto", false],
-            ] as [string, string, boolean][]
-          ).map(([label, href, active]) => (
-            <a
-              key={label}
-              href={href}
-              className={`relative text-sm font-medium transition-colors ${linkClass} ${
-                active
-                  ? "after:absolute after:inset-x-0 after:-bottom-1 after:h-0.5 after:rounded-full after:bg-[#0058be]"
-                  : ""
-              }`}
-            >
-              {label}
-            </a>
-          ))}
+          <a
+            href="#"
+            className={`relative text-sm font-medium transition-colors ${linkClass} after:absolute after:inset-x-0 after:-bottom-1 after:h-0.5 after:rounded-full after:bg-[#0058be]`}
+          >
+            Inicio
+          </a>
+          <a href="#alojamientos" className={`text-sm font-medium transition-colors ${linkClass}`}>
+            Alojamientos
+          </a>
+          <button
+            type="button"
+            onClick={onOpenServicios}
+            className={`text-sm font-medium transition-colors ${linkClass}`}
+          >
+            Servicios
+          </button>
+          <button
+            type="button"
+            onClick={onOpenContacto}
+            className={`text-sm font-medium transition-colors ${linkClass}`}
+          >
+            Contacto
+          </button>
         </nav>
 
         {/* CTA */}

@@ -7,6 +7,7 @@ const finde: ReglaTarifa = {
   desde: null,
   hasta: null,
   factor: "1.5",
+  monto: "0",
   prioridad: 10,
 };
 const temporada: ReglaTarifa = {
@@ -14,6 +15,7 @@ const temporada: ReglaTarifa = {
   desde: "2026-06-01",
   hasta: "2026-07-01",
   factor: "2",
+  monto: "0",
   prioridad: 5,
 };
 

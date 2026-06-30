@@ -6,10 +6,14 @@ import { HeroCarousel } from "./HeroCarousel.js";
 import { BookingPanel } from "./BookingPanel.js";
 import { UnitCard } from "./UnitCard.js";
 import { LoginModal } from "./LoginModal.js";
+import { ServiciosModal } from "./ServiciosModal.js";
+import { ContactoModal } from "./ContactoModal.js";
 import { LandingFooter } from "./LandingFooter.js";
 
 export function LandingPage() {
   const [loginOpen, setLoginOpen] = useState(false);
+  const [serviciosOpen, setServiciosOpen] = useState(false);
+  const [contactoOpen, setContactoOpen] = useState(false);
   const [filtroCapacidad, setFiltroCapacidad] = useState(0);
   const [disponibles, setDisponibles] = useState<number[] | null>(null);
   const [buscando, setBuscando] = useState(false);
@@ -68,7 +72,11 @@ export function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[#f8f9ff] font-[Inter,sans-serif] text-slate-800 dark:bg-[#0b1c30] dark:text-[#f8f9ff]">
-      <NavBar onOpenLogin={() => setLoginOpen(true)} />
+      <NavBar
+        onOpenLogin={() => setLoginOpen(true)}
+        onOpenServicios={() => setServiciosOpen(true)}
+        onOpenContacto={() => setContactoOpen(true)}
+      />
 
       <HeroCarousel onOpenLogin={() => setLoginOpen(true)} />
 
@@ -166,6 +174,14 @@ export function LandingPage() {
 
       {loginOpen && !usandoMock && (
         <LoginModal onClose={() => setLoginOpen(false)} />
+      )}
+
+      {serviciosOpen && (
+        <ServiciosModal onClose={() => setServiciosOpen(false)} />
+      )}
+
+      {contactoOpen && (
+        <ContactoModal onClose={() => setContactoOpen(false)} />
       )}
     </div>
   );

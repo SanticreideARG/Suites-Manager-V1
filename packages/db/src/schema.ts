@@ -138,6 +138,7 @@ export const tarifaReglas = pgTable("tarifa_reglas", {
   desde: date("desde"), // para tipo 'rango'
   hasta: date("hasta"), // para tipo 'rango' (exclusivo)
   factor: numeric("factor", { precision: 5, scale: 2 }).notNull().default("1"),
+  monto: numeric("monto", { precision: 12, scale: 2 }).notNull().default("0"),
   prioridad: integer("prioridad").notNull().default(0),
   activa: boolean("activa").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true })
@@ -324,6 +325,27 @@ export const consumos = pgTable(
 );
 export type Consumo = typeof consumos.$inferSelect;
 
+// ---------- Landing Servicios / Contactos ----------
+export const landingServicios = pgTable("landing_servicios", {
+  id: serial("id").primaryKey(),
+  titulo: varchar("titulo", { length: 120 }).notNull(),
+  descripcion: text("descripcion"),
+  imagenUrl: text("imagen_url"),
+  orden: integer("orden").notNull().default(0),
+  activo: boolean("activo").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const landingContactos = pgTable("landing_contactos", {
+  id: serial("id").primaryKey(),
+  label: varchar("label", { length: 120 }).notNull(),
+  url: varchar("url", { length: 300 }).notNull(),
+  iconoUrl: text("icono_url"),
+  orden: integer("orden").notNull().default(0),
+  activo: boolean("activo").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export type Habitacion = typeof habitaciones.$inferSelect;
 export type Huesped = typeof huespedes.$inferSelect;
 export type Reserva = typeof reservas.$inferSelect;
@@ -336,3 +358,5 @@ export type HabitacionAmenidad = typeof habitacionAmenidades.$inferSelect;
 export type HabitacionFoto = typeof habitacionFotos.$inferSelect;
 export type LandingFoto = typeof landingFotos.$inferSelect;
 export type LandingLink = typeof landingLinks.$inferSelect;
+export type LandingServicio = typeof landingServicios.$inferSelect;
+export type LandingContacto = typeof landingContactos.$inferSelect;

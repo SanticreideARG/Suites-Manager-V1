@@ -133,8 +133,29 @@ export interface TarifaRegla {
   desde: string | null;
   hasta: string | null;
   factor: string;
+  monto: string;
   prioridad: number;
   activa: boolean;
+}
+
+export interface LandingServicio {
+  id: number;
+  titulo: string;
+  descripcion: string | null;
+  imagenUrl: string | null;
+  orden: number;
+  activo: boolean;
+  createdAt: string;
+}
+
+export interface LandingContacto {
+  id: number;
+  label: string;
+  url: string;
+  iconoUrl: string | null;
+  orden: number;
+  activo: boolean;
+  createdAt: string;
 }
 
 export interface Cotizacion {
@@ -409,6 +430,20 @@ export interface ApiClient {
     list: (reservaId: number) => Promise<Consumo[]>;
     create: (data: import("@suites/shared").ConsumoCreate) => Promise<Consumo>;
     remove: (id: number) => Promise<{ ok: true }>;
+  };
+  landingServicios: {
+    list: () => Promise<LandingServicio[]>;
+    create: (data: import("@suites/shared").LandingServicioCreate) => Promise<LandingServicio>;
+    update: (id: number, data: import("@suites/shared").LandingServicioUpdate) => Promise<LandingServicio>;
+    remove: (id: number) => Promise<{ ok: true }>;
+    uploadImagen: (file: File) => Promise<string>;
+  };
+  landingContactos: {
+    list: () => Promise<LandingContacto[]>;
+    create: (data: import("@suites/shared").LandingContactoCreate) => Promise<LandingContacto>;
+    update: (id: number, data: import("@suites/shared").LandingContactoUpdate) => Promise<LandingContacto>;
+    remove: (id: number) => Promise<{ ok: true }>;
+    uploadIcono: (file: File) => Promise<string>;
   };
   reservas: {
     list: (desde?: string, hasta?: string) => Promise<ReservaListItem[]>;

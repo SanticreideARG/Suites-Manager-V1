@@ -148,6 +148,25 @@ landingManagerRoutes.delete("/links/:id", async (c) => {
   return c.json({ ok: true });
 });
 
+// ── Upload genérico de imagen (para servicios / contactos landing) ─
+landingManagerRoutes.post("/upload-imagen", async (c) => {
+  const token = process.env.BLOB_READ_WRITE_TOKEN;
+  if (!token) return c.json({ error: "BLOB_READ_WRITE_TOKEN no configurado" }, 500);
+
+  const form = await c.req.formData();
+  const file = form.get("file");
+  if (!file || typeof file === "string") return c.json({ error: "Campo 'file' requerido" }, 400);
+
+  const ext = file.name.split(".").pop() ?? "png";
+  const nombre = `landing-misc/${Date.now()}.${ext}`;
+  const { url } = await put(nombre, file.stream(), {
+    access: "public",
+    contentType: file.type || "image/png",
+    token,
+  });
+  return c.json({ url });
+});
+
 landingManagerRoutes.patch("/links/orden", zValidator("json", landingLinksOrden), async (c) => {
   const { ids } = c.req.valid("json");
   for (let i = 0; i < ids.length; i++) {

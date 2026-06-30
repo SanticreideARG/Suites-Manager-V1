@@ -8,6 +8,7 @@ export interface ReglaTarifa {
   desde: string | null;
   hasta: string | null;
   factor: string | number;
+  monto: string | number | null;
   prioridad: number;
 }
 
@@ -17,9 +18,9 @@ function addDia(iso: string): string {
   return d.toISOString().slice(0, 10);
 }
 
-/** Factor aplicable a una noche: la regla de mayor prioridad que aplica. */
-export function factorNoche(fecha: string, reglas: ReglaTarifa[]): number {
-  const dow = new Date(fecha + "T00:00:00Z").getUTCDay(); // 0 dom … 6 sáb
+/** Regla de mayor prioridad que aplica a la noche dada. */
+function mejorRegla(fecha: string, reglas: ReglaTarifa[]): ReglaTarifa | null {
+  const dow = new Date(fecha + "T00:00:00Z").getUTCDay();
   const esFinde = dow === 0 || dow === 6;
   let mejor: ReglaTarifa | null = null;
   for (const r of reglas) {
@@ -39,10 +40,23 @@ export function factorNoche(fecha: string, reglas: ReglaTarifa[]): number {
       mejor = r;
     }
   }
-  return mejor ? Number(mejor.factor) : 1;
+  return mejor;
 }
 
-/** Total de la estadía sumando, noche a noche, base × factor aplicable. */
+/** Factor aplicable a una noche (mantiene compatibilidad). */
+export function factorNoche(fecha: string, reglas: ReglaTarifa[]): number {
+  const r = mejorRegla(fecha, reglas);
+  return r ? Number(r.factor) : 1;
+}
+
+/** Precio de una noche: base × factor + monto (monto puede ser negativo = descuento). */
+function precioNoche(tarifaBase: number, fecha: string, reglas: ReglaTarifa[]): number {
+  const r = mejorRegla(fecha, reglas);
+  if (!r) return tarifaBase;
+  return tarifaBase * Number(r.factor) + Number(r.monto ?? 0);
+}
+
+/** Total de la estadía sumando, noche a noche, base × factor + monto. */
 export function totalDesdeReglas(
   tarifaBase: number,
   checkin: string,
@@ -52,7 +66,7 @@ export function totalDesdeReglas(
   let total = 0;
   let noches = 0;
   for (let d = checkin; d < checkout; d = addDia(d)) {
-    total += tarifaBase * factorNoche(d, reglas);
+    total += precioNoche(tarifaBase, d, reglas);
     noches += 1;
   }
   return { total: Math.round(total * 100) / 100, noches };

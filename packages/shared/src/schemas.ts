@@ -113,6 +113,7 @@ export const tarifaReglaCreate = z
     desde: fechaISO.optional(),
     hasta: fechaISO.optional(),
     factor: z.number().positive().max(100),
+    monto: z.number().default(0),
     prioridad: z.number().int().min(0).default(0),
     activa: z.boolean().default(true),
   })
@@ -128,6 +129,7 @@ export const tarifaReglaUpdate = z.object({
   desde: fechaISO.nullable().optional(),
   hasta: fechaISO.nullable().optional(),
   factor: z.number().positive().max(100).optional(),
+  monto: z.number().optional(),
   prioridad: z.number().int().min(0).optional(),
   activa: z.boolean().optional(),
 });
@@ -313,3 +315,27 @@ export const consumoCreate = z.object({
   notas: z.string().max(500).optional(),
 });
 export type ConsumoCreate = z.infer<typeof consumoCreate>;
+
+// ---------- Landing Servicios ----------
+export const landingServicioCreate = z.object({
+  titulo: z.string().min(1).max(120),
+  descripcion: z.string().max(2000).optional(),
+  imagenUrl: z.string().url().optional().or(z.literal("")),
+  orden: z.number().int().default(0),
+  activo: z.boolean().default(true),
+});
+export type LandingServicioCreate = z.infer<typeof landingServicioCreate>;
+export const landingServicioUpdate = landingServicioCreate.partial();
+export type LandingServicioUpdate = z.infer<typeof landingServicioUpdate>;
+
+// ---------- Landing Contactos ----------
+export const landingContactoCreate = z.object({
+  label: z.string().min(1).max(120),
+  url: z.string().min(1).max(300),
+  iconoUrl: z.string().url().optional().or(z.literal("")),
+  orden: z.number().int().default(0),
+  activo: z.boolean().default(true),
+});
+export type LandingContactoCreate = z.infer<typeof landingContactoCreate>;
+export const landingContactoUpdate = landingContactoCreate.partial();
+export type LandingContactoUpdate = z.infer<typeof landingContactoUpdate>;

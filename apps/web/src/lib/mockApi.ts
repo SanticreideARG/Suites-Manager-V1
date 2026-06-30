@@ -23,6 +23,8 @@ import type {
   TareaHousekeeping,
   Servicio,
   Consumo,
+  LandingServicio,
+  LandingContacto,
 } from "./types.js";
 import { ApiError } from "./types.js";
 import { addDays, diffDays } from "./fechas.js";
@@ -580,6 +582,7 @@ export const mockApi: ApiClient = {
         desde: data.desde ?? null,
         hasta: data.hasta ?? null,
         factor: String(data.factor),
+        monto: String(data.monto ?? 0),
         prioridad: data.prioridad ?? 0,
         activa: data.activa ?? true,
       };
@@ -594,6 +597,7 @@ export const mockApi: ApiClient = {
       if (data.desde !== undefined) r.desde = data.desde ?? null;
       if (data.hasta !== undefined) r.hasta = data.hasta ?? null;
       if (data.factor !== undefined) r.factor = String(data.factor);
+      if (data.monto !== undefined) r.monto = String(data.monto);
       if (data.prioridad !== undefined) r.prioridad = data.prioridad;
       if (data.activa !== undefined) r.activa = data.activa;
       return delay(r);
@@ -839,6 +843,61 @@ export const mockApi: ApiClient = {
       return delay({ ok: true } as const);
     },
   },
+  landingServicios: (() => {
+    let seq = 0;
+    const items: LandingServicio[] = [
+      { id: ++seq, titulo: "Wi-Fi de alta velocidad", descripcion: "Conexión ilimitada en todas las habitaciones y áreas comunes.", imagenUrl: null, orden: 0, activo: true, createdAt: new Date().toISOString() },
+      { id: ++seq, titulo: "Desayuno incluido", descripcion: "Desayuno continental servido cada mañana de 7 a 10 hs.", imagenUrl: null, orden: 1, activo: true, createdAt: new Date().toISOString() },
+      { id: ++seq, titulo: "Piscina", descripcion: "Piscina al aire libre disponible de diciembre a marzo.", imagenUrl: null, orden: 2, activo: true, createdAt: new Date().toISOString() },
+    ];
+    return {
+      list: () => delay([...items].sort((a, b) => a.orden - b.orden || a.id - b.id)),
+      create: (data) => {
+        const item: LandingServicio = { id: ++seq, titulo: data.titulo, descripcion: data.descripcion ?? null, imagenUrl: data.imagenUrl || null, orden: data.orden ?? 0, activo: data.activo ?? true, createdAt: new Date().toISOString() };
+        items.push(item);
+        return delay(item);
+      },
+      update: (id, data) => {
+        const item = items.find((x) => x.id === id);
+        if (!item) return Promise.reject(new ApiError(404, "No encontrado"));
+        Object.assign(item, { ...data, imagenUrl: data.imagenUrl !== undefined ? (data.imagenUrl || null) : item.imagenUrl });
+        return delay({ ...item });
+      },
+      remove: (id) => {
+        const i = items.findIndex((x) => x.id === id);
+        if (i >= 0) items.splice(i, 1);
+        return delay({ ok: true } as const);
+      },
+      uploadImagen: (_file: File) => delay("https://placehold.co/400x300/png"),
+    };
+  })(),
+  landingContactos: (() => {
+    let seq = 0;
+    const items: LandingContacto[] = [
+      { id: ++seq, label: "Email", url: "mailto:info@ejemplo.com", iconoUrl: null, orden: 0, activo: true, createdAt: new Date().toISOString() },
+      { id: ++seq, label: "Instagram", url: "https://instagram.com/ejemplo", iconoUrl: null, orden: 1, activo: true, createdAt: new Date().toISOString() },
+    ];
+    return {
+      list: () => delay([...items].sort((a, b) => a.orden - b.orden || a.id - b.id)),
+      create: (data) => {
+        const item: LandingContacto = { id: ++seq, label: data.label, url: data.url, iconoUrl: data.iconoUrl || null, orden: data.orden ?? 0, activo: data.activo ?? true, createdAt: new Date().toISOString() };
+        items.push(item);
+        return delay(item);
+      },
+      update: (id, data) => {
+        const item = items.find((x) => x.id === id);
+        if (!item) return Promise.reject(new ApiError(404, "No encontrado"));
+        Object.assign(item, { ...data, iconoUrl: data.iconoUrl !== undefined ? (data.iconoUrl || null) : item.iconoUrl });
+        return delay({ ...item });
+      },
+      remove: (id) => {
+        const i = items.findIndex((x) => x.id === id);
+        if (i >= 0) items.splice(i, 1);
+        return delay({ ok: true } as const);
+      },
+      uploadIcono: (_file: File) => delay("https://placehold.co/80x80/png"),
+    };
+  })(),
   reportes: {
     resumen: (desde, hasta) => {
       const dias = Math.max(1, diffDays(desde, hasta));

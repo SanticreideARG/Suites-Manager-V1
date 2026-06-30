@@ -25,6 +25,10 @@ import type {
   ServicioCreate,
   ServicioUpdate,
   ConsumoCreate,
+  LandingServicioCreate,
+  LandingServicioUpdate,
+  LandingContactoCreate,
+  LandingContactoUpdate,
 } from "@suites/shared";
 import type {
   ApiClient,
@@ -53,6 +57,8 @@ import type {
   PagoRegistrado,
   Servicio,
   Consumo,
+  LandingServicio,
+  LandingContacto,
 } from "./types.js";
 import { ApiError } from "./types.js";
 import { mockApi } from "./mockApi.js";
@@ -85,6 +91,8 @@ export type {
   PagoRegistrado,
   Servicio,
   Consumo,
+  LandingServicio,
+  LandingContacto,
 };
 
 const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
@@ -272,6 +280,28 @@ const realApi: ApiClient = {
       request<Consumo>("/consumos", { method: "POST", body: JSON.stringify(data) }),
     remove: (id: number) =>
       request<{ ok: true }>(`/consumos/${id}`, { method: "DELETE" }),
+  },
+  landingServicios: {
+    list: () => request<LandingServicio[]>("/landing-servicios"),
+    create: (data: LandingServicioCreate) =>
+      request<LandingServicio>("/landing-servicios", { method: "POST", body: JSON.stringify(data) }),
+    update: (id: number, data: LandingServicioUpdate) =>
+      request<LandingServicio>(`/landing-servicios/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+    remove: (id: number) =>
+      request<{ ok: true }>(`/landing-servicios/${id}`, { method: "DELETE" }),
+    uploadImagen: (file: File) =>
+      upload<{ url: string }>("/landing-manager/upload-imagen", file).then((r) => r.url),
+  },
+  landingContactos: {
+    list: () => request<LandingContacto[]>("/landing-contactos"),
+    create: (data: LandingContactoCreate) =>
+      request<LandingContacto>("/landing-contactos", { method: "POST", body: JSON.stringify(data) }),
+    update: (id: number, data: LandingContactoUpdate) =>
+      request<LandingContacto>(`/landing-contactos/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+    remove: (id: number) =>
+      request<{ ok: true }>(`/landing-contactos/${id}`, { method: "DELETE" }),
+    uploadIcono: (file: File) =>
+      upload<{ url: string }>("/landing-manager/upload-imagen", file).then((r) => r.url),
   },
   reportes: {
     resumen: (desde: string, hasta: string) =>

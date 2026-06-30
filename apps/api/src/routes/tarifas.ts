@@ -23,6 +23,7 @@ tarifasRoutes.post("/", zValidator("json", tarifaReglaCreate), async (c) => {
     desde: data.desde ?? null,
     hasta: data.hasta ?? null,
     factor: String(data.factor),
+    monto: String(data.monto ?? 0),
     prioridad: data.prioridad,
     activa: data.activa,
   };
@@ -32,12 +33,13 @@ tarifasRoutes.post("/", zValidator("json", tarifaReglaCreate), async (c) => {
 
 tarifasRoutes.patch("/:id", zValidator("json", tarifaReglaUpdate), async (c) => {
   const id = Number(c.req.param("id"));
-  const { factor, ...resto } = c.req.valid("json");
+  const { factor, monto, ...resto } = c.req.valid("json");
   const [row] = await db
     .update(tarifaReglas)
     .set({
       ...resto,
       ...(factor !== undefined ? { factor: String(factor) } : {}),
+      ...(monto !== undefined ? { monto: String(monto) } : {}),
     })
     .where(eq(tarifaReglas.id, id))
     .returning();

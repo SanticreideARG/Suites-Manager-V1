@@ -5,8 +5,10 @@ import { HabitacionesAdmin } from "./HabitacionesAdmin.js";
 import { AmenidadesAdmin } from "./AmenidadesAdmin.js";
 import { UsuariosAdmin } from "./UsuariosAdmin.js";
 import { FacturacionAdmin } from "./FacturacionAdmin.js";
+import { LandingServiciosAdmin } from "./LandingServiciosAdmin.js";
+import { LandingContactosAdmin } from "./LandingContactosAdmin.js";
 
-type Tab = "datos" | "logo" | "alojamientos" | "caracteristicas" | "facturacion" | "usuarios";
+type Tab = "datos" | "logo" | "alojamientos" | "caracteristicas" | "facturacion" | "usuarios" | "servicios-landing" | "contacto-landing";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "datos", label: "Datos" },
@@ -15,6 +17,8 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "caracteristicas", label: "Características" },
   { id: "facturacion", label: "Facturación" },
   { id: "usuarios", label: "Usuarios" },
+  { id: "servicios-landing", label: "Servicios (landing)" },
+  { id: "contacto-landing", label: "Contacto (landing)" },
 ];
 
 const campos = [
@@ -60,6 +64,8 @@ export function ConfiguracionPage() {
       {tab === "caracteristicas" && <AmenidadesAdmin />}
       {tab === "facturacion" && <FacturacionAdmin />}
       {tab === "usuarios" && <UsuariosAdmin />}
+      {tab === "servicios-landing" && <LandingServiciosAdmin />}
+      {tab === "contacto-landing" && <LandingContactosAdmin />}
     </div>
   );
 }

@@ -1,0 +1,19 @@
+CREATE TABLE landing_servicios (
+  id SERIAL PRIMARY KEY,
+  titulo VARCHAR(120) NOT NULL,
+  descripcion TEXT,
+  imagen_url TEXT,
+  orden INTEGER NOT NULL DEFAULT 0,
+  activo BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE landing_contactos (
+  id SERIAL PRIMARY KEY,
+  label VARCHAR(120) NOT NULL,
+  url VARCHAR(300) NOT NULL,
+  icono_url TEXT,
+  orden INTEGER NOT NULL DEFAULT 0,
+  activo BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
