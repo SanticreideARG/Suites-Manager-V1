@@ -120,6 +120,10 @@ export const tarifaReglaCreate = z
   .refine((r) => r.tipo !== "rango" || (r.desde && r.hasta && r.hasta > r.desde), {
     message: "Para tipo 'rango' se requieren desde y hasta (hasta > desde)",
     path: ["hasta"],
+  })
+  .refine((r) => r.factor === 1 || r.monto === 0, {
+    message: "Una regla es de un solo tipo: coeficiente o monto fijo, no ambos",
+    path: ["monto"],
   });
 export type TarifaReglaCreate = z.infer<typeof tarifaReglaCreate>;
 
@@ -293,12 +297,17 @@ export const tareaHousekeepingUpdate = z.object({
 export type TareaHousekeepingUpdate = z.infer<typeof tareaHousekeepingUpdate>;
 
 // ---------- Servicios adicionales / Consumos ----------
+// Categorías fijas (decisión 2026-06-26): Servicios/Consumos/Cargos suman al
+// total de la reserva; Bonificaciones resta.
+export const categoriaCargo = z.enum(["servicios", "consumos", "cargos", "bonificaciones"]);
+export type CategoriaCargo = z.infer<typeof categoriaCargo>;
+
 export const servicioCreate = z.object({
   nombre: z.string().min(1).max(120),
   descripcion: z.string().max(500).nullable().optional(),
   precio: z.number().nonnegative(),
   unidad: z.string().min(1).max(40).default("unidad"),
-  categoria: z.string().max(60).nullable().optional(),
+  categoria: categoriaCargo.default("servicios"),
   activo: z.boolean().default(true),
 });
 export type ServicioCreate = z.infer<typeof servicioCreate>;
@@ -310,11 +319,24 @@ export const consumoCreate = z.object({
   reservaId: z.number().int().positive(),
   servicioId: z.number().int().positive().optional(),
   descripcion: z.string().min(1).max(200),
+  categoria: categoriaCargo.default("servicios"),
   cantidad: z.number().positive().default(1),
   precioUnit: z.number().nonnegative(),
   notas: z.string().max(500).optional(),
 });
 export type ConsumoCreate = z.infer<typeof consumoCreate>;
+
+// ---------- Políticas de cancelación ----------
+export const politicaCancelacionCreate = z.object({
+  nombre: z.string().min(1).max(120),
+  diasMinimos: z.number().int().min(0),
+  porcentaje: z.number().min(0).max(100),
+  activa: z.boolean().default(true),
+});
+export type PoliticaCancelacionCreate = z.infer<typeof politicaCancelacionCreate>;
+
+export const politicaCancelacionUpdate = politicaCancelacionCreate.partial();
+export type PoliticaCancelacionUpdate = z.infer<typeof politicaCancelacionUpdate>;
 
 // ---------- Landing Servicios ----------
 export const landingServicioCreate = z.object({

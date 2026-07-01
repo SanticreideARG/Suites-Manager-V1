@@ -22,6 +22,8 @@ export function AccionesReserva({
   const [checkinEd, setCheckinEd] = useState(reserva.checkin);
   const [checkoutEd, setCheckoutEd] = useState(reserva.checkout);
   const [error, setError] = useState<string | null>(null);
+  const [confirmandoCancelar, setConfirmandoCancelar] = useState(false);
+  const [errorCancelar, setErrorCancelar] = useState<string | null>(null);
 
   const editable = reserva.estado === "reservada" || reserva.estado === "ocupada";
 
@@ -106,6 +108,10 @@ export function AccionesReserva({
       refrescar();
       onClose();
     },
+    onError: (err) =>
+      setErrorCancelar(
+        err instanceof ApiError ? err.message : "No se pudo cancelar la reserva.",
+      ),
   });
 
   // Bloqueo de mantenimiento: vista simplificada (solo eliminar el bloqueo).
@@ -207,7 +213,7 @@ export function AccionesReserva({
         </div>
       )}
 
-      {!editando && (
+      {!editando && !confirmandoCancelar && (
         <>
           {editable && (
             <button
@@ -249,7 +255,7 @@ export function AccionesReserva({
             )}
             {reserva.estado !== "checkout" && (
               <button
-                onClick={() => cancelar.mutate()}
+                onClick={() => { setErrorCancelar(null); setConfirmandoCancelar(true); }}
                 className="rounded-lg border border-rose-300 px-3 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50"
               >
                 Cancelar
@@ -258,11 +264,105 @@ export function AccionesReserva({
           </div>
         </>
       )}
+
+      {!editando && confirmandoCancelar && (
+        <CancelarPanel
+          reserva={reserva}
+          pending={cancelar.isPending}
+          error={errorCancelar}
+          onConfirmar={() => cancelar.mutate()}
+          onVolver={() => { setConfirmandoCancelar(false); setErrorCancelar(null); }}
+        />
+      )}
     </Modal>
   );
 }
 
+// ── Confirmación de cancelación ──────────────────────────────────────────────
+
+function CancelarPanel({
+  reserva,
+  pending,
+  error,
+  onConfirmar,
+  onVolver,
+}: {
+  reserva: ReservaListItem;
+  pending: boolean;
+  error: string | null;
+  onConfirmar: () => void;
+  onVolver: () => void;
+}) {
+  const consumosQ = useQuery({
+    queryKey: ["consumos", reserva.id],
+    queryFn: () => api.consumos.list(reserva.id),
+  });
+  const cotizacionQ = useQuery({
+    queryKey: ["cotizar-cancelacion", reserva.id],
+    queryFn: () => api.reservas.cotizarCancelacion(reserva.id),
+    enabled: reserva.huespedId != null,
+  });
+
+  const fmt = (n: number) => `$${n.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`;
+  const bloqueada = reserva.estado === "ocupada" && (consumosQ.data?.length ?? 0) > 0;
+  const cotizacion = cotizacionQ.data;
+
+  return (
+    <div className="space-y-3 rounded-xl border border-rose-200 p-4 dark:border-rose-900/40">
+      {bloqueada ? (
+        <>
+          <p className="text-sm font-medium text-rose-600 dark:text-rose-400">
+            No se puede cancelar: la reserva ya hizo check-in y tiene cargos asociados.
+          </p>
+          <p className="text-xs text-slate-400">
+            Quitá los cargos desde "Extras" si igual necesitás cancelarla.
+          </p>
+          <button
+            onClick={onVolver}
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300"
+          >
+            Volver
+          </button>
+        </>
+      ) : (
+        <>
+          <p className="text-sm text-slate-700 dark:text-slate-200">¿Confirmás cancelar esta reserva?</p>
+          {cotizacion && cotizacion.monto > 0 && (
+            <p className="text-sm text-amber-600 dark:text-amber-400">
+              Se aplicará un cargo por cancelación del {cotizacion.porcentaje}% ({fmt(cotizacion.monto)}) —
+              faltan {cotizacion.diasRestantes} días para el check-in.
+            </p>
+          )}
+          {error && <p className="text-sm text-rose-600">{error}</p>}
+          <div className="flex gap-2">
+            <button
+              onClick={onConfirmar}
+              disabled={pending}
+              className="flex-1 rounded-lg bg-rose-600 px-3 py-2 text-sm font-medium text-white hover:bg-rose-500 disabled:opacity-50"
+            >
+              {pending ? "Cancelando…" : "Sí, cancelar"}
+            </button>
+            <button
+              onClick={onVolver}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300"
+            >
+              No, volver
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ── Sección de extras (servicios adicionales / consumos) ────────────────────
+
+const CATEGORIA_LABEL: Record<string, string> = {
+  servicios: "Servicios",
+  consumos: "Consumos",
+  cargos: "Cargos",
+  bonificaciones: "Bonificación",
+};
 
 function ExtrasSection({ reservaId }: { reservaId: number }) {
   const qc = useQueryClient();
@@ -278,6 +378,7 @@ function ExtrasSection({ reservaId }: { reservaId: number }) {
   const [abierto, setAbierto] = useState(false);
   const [servicioId, setServicioId] = useState<number | "">("");
   const [descripcion, setDescripcion] = useState("");
+  const [categoria, setCategoria] = useState<"servicios" | "consumos" | "cargos" | "bonificaciones">("servicios");
   const [cantidad, setCantidad] = useState("1");
   const [precioUnit, setPrecioUnit] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -290,6 +391,7 @@ function ExtrasSection({ reservaId }: { reservaId: number }) {
     if (s) {
       setDescripcion(s.nombre);
       setPrecioUnit(s.precio);
+      setCategoria(s.categoria);
     }
   };
 
@@ -306,6 +408,7 @@ function ExtrasSection({ reservaId }: { reservaId: number }) {
         reservaId,
         servicioId: servicioId === "" ? undefined : servicioId,
         descripcion,
+        categoria,
         cantidad: Number(cantidad),
         precioUnit: Number(precioUnit),
       }),
@@ -314,6 +417,7 @@ function ExtrasSection({ reservaId }: { reservaId: number }) {
       setAbierto(false);
       setServicioId("");
       setDescripcion("");
+      setCategoria("servicios");
       setCantidad("1");
       setPrecioUnit("");
       setError(null);
@@ -327,14 +431,17 @@ function ExtrasSection({ reservaId }: { reservaId: number }) {
   });
 
   const consumos = consumosQ.data ?? [];
-  const totalExtras = consumos.reduce((acc, c) => acc + Number(c.subtotal), 0);
+  const totalExtras = consumos.reduce(
+    (acc, c) => acc + (c.categoria === "bonificaciones" ? -Number(c.subtotal) : Number(c.subtotal)),
+    0,
+  );
   const subtotal = (Number(cantidad) || 0) * (Number(precioUnit) || 0);
 
   return (
     <div className="rounded-xl border border-slate-200 dark:border-slate-700">
       <div className="flex items-center justify-between px-4 py-3">
         <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-          🧾 Extras{totalExtras > 0 ? ` · ${fmt(totalExtras)}` : ""}
+          🧾 Extras{totalExtras !== 0 ? ` · ${totalExtras < 0 ? "−" : ""}${fmt(Math.abs(totalExtras))}` : ""}
         </span>
         {!abierto && (
           <button
@@ -348,29 +455,35 @@ function ExtrasSection({ reservaId }: { reservaId: number }) {
 
       {consumos.length > 0 && (
         <div className="border-t border-slate-100 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700">
-          {consumos.map((c: Consumo) => (
-            <div key={c.id} className="flex items-center justify-between px-4 py-2.5 text-sm">
-              <div>
-                <span className="font-medium text-slate-700 dark:text-slate-200">{c.descripcion}</span>
-                <div className="text-xs text-slate-400">
-                  {c.cantidad} × {fmt(Number(c.precioUnit))}
+          {consumos.map((c: Consumo) => {
+            const esBonificacion = c.categoria === "bonificaciones";
+            return (
+              <div key={c.id} className="flex items-center justify-between px-4 py-2.5 text-sm">
+                <div>
+                  <span className="font-medium text-slate-700 dark:text-slate-200">{c.descripcion}</span>
+                  <span className="ml-2 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                    {CATEGORIA_LABEL[c.categoria] ?? c.categoria}
+                  </span>
+                  <div className="text-xs text-slate-400">
+                    {c.cantidad} × {fmt(Number(c.precioUnit))}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`font-semibold ${esBonificacion ? "text-emerald-600 dark:text-emerald-400" : "text-slate-800 dark:text-slate-100"}`}>
+                    {esBonificacion ? "−" : ""}{fmt(Number(c.subtotal))}
+                  </span>
+                  <button
+                    onClick={() => quitar.mutate(c.id)}
+                    disabled={quitar.isPending}
+                    className="text-rose-500 hover:text-rose-600 disabled:opacity-50"
+                    aria-label="Quitar"
+                  >
+                    ✕
+                  </button>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-slate-800 dark:text-slate-100">
-                  {fmt(Number(c.subtotal))}
-                </span>
-                <button
-                  onClick={() => quitar.mutate(c.id)}
-                  disabled={quitar.isPending}
-                  className="text-rose-500 hover:text-rose-600 disabled:opacity-50"
-                  aria-label="Quitar"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -400,6 +513,24 @@ function ExtrasSection({ reservaId }: { reservaId: number }) {
               placeholder="Ej: Desayuno, transfer, lavandería…"
               className="mt-1 w-full rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
             />
+          </label>
+
+          <label className="block text-sm">
+            <span className="text-slate-600 dark:text-slate-300">Categoría</span>
+            <select
+              value={categoria}
+              onChange={(e) => setCategoria(e.target.value as typeof categoria)}
+              className="mt-1 w-full rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+            >
+              {Object.entries(CATEGORIA_LABEL).map(([k, v]) => (
+                <option key={k} value={k}>{v}</option>
+              ))}
+            </select>
+            {categoria === "bonificaciones" && (
+              <span className="mt-1 block text-xs text-emerald-600 dark:text-emerald-400">
+                Esta categoría resta del total de la reserva.
+              </span>
+            )}
           </label>
 
           <div className="grid grid-cols-2 gap-3">

@@ -43,6 +43,7 @@ export {
   tareasHousekeeping,
   servicios,
   consumos,
+  politicasCancelacion,
   authUser,
   authSession,
   authAccount,
@@ -67,6 +68,7 @@ export type {
   TareaHousekeeping,
   Servicio,
   Consumo,
+  PoliticaCancelacion,
 } from "./schema.js";
 
 // Operadores de Drizzle (una sola instancia; ver nota en package del repo).

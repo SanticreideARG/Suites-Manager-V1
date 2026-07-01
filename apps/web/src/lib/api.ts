@@ -29,6 +29,8 @@ import type {
   LandingServicioUpdate,
   LandingContactoCreate,
   LandingContactoUpdate,
+  PoliticaCancelacionCreate,
+  PoliticaCancelacionUpdate,
 } from "@suites/shared";
 import type {
   ApiClient,
@@ -43,6 +45,7 @@ import type {
   ReporteForecast,
   TarifaRegla,
   Cotizacion,
+  CotizacionCancelacion,
   Config,
   Usuario,
   PublicHabitacion,
@@ -60,6 +63,8 @@ import type {
   LandingServicio,
   LandingContacto,
   AuditLogPage,
+  AuditVerifyResult,
+  PoliticaCancelacion,
 } from "./types.js";
 import { ApiError } from "./types.js";
 import { mockApi } from "./mockApi.js";
@@ -75,6 +80,8 @@ export type {
   ReservaListItem,
   TarifaRegla,
   Cotizacion,
+  CotizacionCancelacion,
+  PoliticaCancelacion,
   ReporteResumen,
   ReporteComparativa,
   ReporteForecast,
@@ -95,6 +102,7 @@ export type {
   LandingServicio,
   LandingContacto,
   AuditLogPage,
+  AuditVerifyResult,
 };
 
 const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
@@ -283,6 +291,15 @@ const realApi: ApiClient = {
     remove: (id: number) =>
       request<{ ok: true }>(`/consumos/${id}`, { method: "DELETE" }),
   },
+  politicasCancelacion: {
+    list: () => request<PoliticaCancelacion[]>("/politicas-cancelacion"),
+    create: (data: PoliticaCancelacionCreate) =>
+      request<PoliticaCancelacion>("/politicas-cancelacion", { method: "POST", body: JSON.stringify(data) }),
+    update: (id: number, data: PoliticaCancelacionUpdate) =>
+      request<PoliticaCancelacion>(`/politicas-cancelacion/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+    remove: (id: number) =>
+      request<{ ok: true }>(`/politicas-cancelacion/${id}`, { method: "DELETE" }),
+  },
   landingServicios: {
     list: () => request<LandingServicio[]>("/landing-servicios"),
     create: (data: LandingServicioCreate) =>
@@ -317,6 +334,7 @@ const realApi: ApiClient = {
       if (params.page)    qs.set("page",    String(params.page));
       return request<AuditLogPage>(`/audit-log?${qs.toString()}`);
     },
+    verify: () => request<AuditVerifyResult>("/audit-log/verify"),
   },
   reportes: {
     resumen: (desde: string, hasta: string) =>
@@ -395,6 +413,8 @@ const realApi: ApiClient = {
       request<unknown>(`/reservas/${id}/checkout`, { method: "POST" }),
     cancelar: (id: number) =>
       request<unknown>(`/reservas/${id}/cancelar`, { method: "POST" }),
+    cotizarCancelacion: (id: number) =>
+      request<CotizacionCancelacion>(`/reservas/${id}/cotizar-cancelacion`),
   },
 };
 

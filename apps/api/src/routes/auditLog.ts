@@ -1,6 +1,7 @@
 import { Hono } from "hono";
-import { db, auditLog, desc, and, eq, gte, lte, drizzleSql } from "@suites/db";
+import { db, auditLog, desc, asc, and, eq, gte, lte, drizzleSql } from "@suites/db";
 import { adminOnly } from "../middleware/auth.js";
+import { AUDIT_GENESIS_HASH, computeAuditHash } from "../lib/audit.js";
 
 export const auditLogRoutes = new Hono();
 auditLogRoutes.use("*", adminOnly);
@@ -54,6 +55,47 @@ auditLogRoutes.get("/", async (c) => {
     .offset((page - 1) * PAGE_SIZE);
 
   return c.json({ items, total, page, pageSize: PAGE_SIZE });
+});
+
+// Verifica la integridad de la cadena de hashes (detecta ediciones/borrados
+// directos en la tabla, hechos por fuera de la API).
+auditLogRoutes.get("/verify", async (c) => {
+  const rows = await db.select().from(auditLog).orderBy(asc(auditLog.id));
+
+  let esperado = AUDIT_GENESIS_HASH;
+  let legacySinHash = 0;
+  let rotoEnId: number | null = null;
+
+  for (const row of rows) {
+    if (row.hash == null) {
+      // Fila previa a la migración del hash encadenado: no verificable; la
+      // cadena arranca de cero después de estas filas.
+      legacySinHash++;
+      esperado = AUDIT_GENESIS_HASH;
+      continue;
+    }
+    const hashCalculado = computeAuditHash(esperado, {
+      timestamp: row.timestamp.toISOString(),
+      userId: row.userId,
+      accion: row.accion,
+      entidad: row.entidad,
+      entidadId: row.entidadId,
+      diff: row.diff,
+    });
+    if (row.hashAnterior !== esperado || row.hash !== hashCalculado) {
+      rotoEnId = row.id;
+      break;
+    }
+    esperado = row.hash;
+  }
+
+  return c.json({
+    ok: rotoEnId === null,
+    rotoEnId,
+    totalFilas: rows.length,
+    filasVerificadas: rows.length - legacySinHash,
+    legacySinHash,
+  });
 });
 
 // Purga manual: elimina entradas con más de 6 meses

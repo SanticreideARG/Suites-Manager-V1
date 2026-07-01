@@ -152,8 +152,16 @@ ni backend. Útil para verificar UI. Muestra un banner ámbar. Replica las regla
   `admin` | `gestor` | `cliente` (default `cliente`). Promover admin: `UPDATE auth_user SET role='admin' WHERE email=...`.
 - Env: `BETTER_AUTH_SECRET` + `BETTER_AUTH_URL` (en `.env` local; **agregarlos en el proyecto API de Vercel**).
 - neon-http alcanza para el flujo email/password (no requirió transacciones interactivas/pg).
-- Pendiente: login en el front (CORS con `credentials` + `trustedOrigins` para cookies cross-origin),
-  gating por rol, Google OAuth.
+- ✅ Login en el front, gating por rol y **Google OAuth** ya implementados
+  (`socialProviders.google` en `auth.ts` + botón en `LoginModal.tsx`). Ver
+  detalle en `docs/roadmap.md` § Roles y permisos.
+- ✅ Re-autenticación antes de cambios sensibles: sección "Mi cuenta"
+  (`apps/web/src/features/auth/MiCuenta.tsx`). `changePassword` exige
+  `currentPassword` (nativo de Better Auth); cambiar email reverifica la
+  contraseña actual vía `signIn.email` antes de `changeEmail`; `deleteUser`
+  recibe `password` y Better Auth lo verifica server-side. Ambos
+  (`changeEmail`, `deleteUser`) están habilitados explícitamente en
+  `user: {...}` de `auth.ts` (antes no lo estaban).
 
 ## Convenciones de Git
 
@@ -165,20 +173,56 @@ ni backend. Útil para verificar UI. Muestra un banner ámbar. Replica las regla
 
 ## Estado actual (al día)
 
-**Funciona y verificado:**
-- MVP completo del front: planner de ocupación (grilla custom), CRUD habitaciones
-  (alta/editar/mantenimiento/eliminar), CRUD reservas (crear/modificar fechas/cancelar)
-  con recálculo de total, check-in/out, comprobante PDF (react-pdf, code-split),
-  export Excel (exceljs, code-split).
-- API verificada end-to-end contra Neon: health, habitaciones, alta de reserva con
-  transacción, y **anti-overbooking devuelve 409**.
-- **API desplegada como funciones serverless en Vercel** (deploy exitoso).
+> Snapshot revisado 2026-07-01 contra el código real (19 migraciones,
+> `0000` a `0018`; las últimas tres — `0016_cargos_categorias`,
+> `0017_audit_log_hash`, `0018_politicas_cancelacion` — **no corrieron aún
+> contra Neon**, hay que `pnpm db:migrate`). El detalle ítem por ítem vive en
+> `docs/roadmap.md` (mantenido como fuente de verdad de feature-status); esta
+> sección es un resumen de alto nivel, no la duplica.
 
-**Pendiente / en curso:**
-- Migración `0001`: la columna `notas` de `huespedes` está en el schema/código pero NO en
-  la base real (la `0000_init` corrió antes de agregarla). Hay que crear y correr la 0001.
-- CRUD de huéspedes (ficha datos + preferencias + historial de estadías) — en desarrollo.
-- Deploy de la web en Vercel con `VITE_API_URL` apuntando a la API.
+**Funciona y verificado (más allá del MVP original):**
+- MVP completo (habitaciones, reservas, planner, check-in/out, comprobante PDF,
+  export Excel), desplegado en Vercel (web + API serverless).
+- Auth completa: Better Auth con email/password **y Google OAuth**, roles
+  admin/gestor/cliente con gating por ruta, gestión de usuarios, y
+  **re-autenticación** para cambiar password/email/borrar cuenta ("Mi cuenta").
+- Huéspedes Fase A (tipo/número de documento, nacionalidad, fecha de
+  nacimiento, sección "alojados ahora" vs histórico), cargos/consumos extra
+  sobre la reserva (catálogo `servicios` + tabla `consumos`) con **4
+  categorías fijas** (Servicios/Consumos/Cargos/Bonificaciones — Bonificaciones
+  resta del total) y CRUD del catálogo en la pestaña Tarifas.
+- Tarifas dinámicas: reglas por coeficiente **o** monto fijo (excluyente entre
+  sí, con validación en la API) + edición de precio base por habitación, todo
+  centralizado en la pestaña Tarifas.
+- Amenidades (catálogo + asignación por unidad), fotos de alojamiento y logo
+  vía Vercel Blob.
+- Landing pública con disponibilidad en tiempo real + panel de administración
+  de landing (hero, fotos, links de footer, servicios, contactos).
+- Reportes ampliados (comparativa mensual/anual, forecast, gráficos, export
+  PDF/Excel), módulo de Pagos completo (DB+API+UI en el modal de reserva),
+  Housekeeping completo.
+- Audit log con **hash encadenado** (sha256, tamper-evident) + endpoint
+  `GET /audit-log/verify` y botón "Verificar integridad" en Actividad.
+- Cancelación de reservas: pide confirmación (panel inline, no cancela
+  directo), bloquea si hay check-in + cargos asociados (409
+  `cancelacion_bloqueada`), y aplica cargo % configurable según anticipación
+  (Configuración → "Cancelaciones") como un cargo más (categoría `cargos`).
+
+**Pendiente / gaps reales (ver `docs/roadmap.md` para detalle):**
+- **Correr las migraciones 0016, 0017 y 0018 contra Neon** (`pnpm db:migrate`)
+  antes de desplegar — el código de esta sesión asume que ya corrieron.
+- Reservas online desde la landing pública (hoy solo se puede consultar
+  disponibilidad; crear una reserva sigue restringido a `staff`).
+- Ficha de huésped Fase B (dirección, estado civil, motivo de viaje, info de
+  pago, vehículo, preferencias, acompañantes, foto de documento).
+- Playwright, Sentry/Uptime Kuma, MercadoPago.
+- **Drift de entorno detectado (no relacionado a esta sesión)**: `pnpm
+  typecheck` falla en `packages/db` (src/reseed.ts) y `apps/api` (`auth.ts`
+  google types, varios `'row' is possibly undefined` en rutas no tocadas acá)
+  incluso en un checkout limpio — parece un desfasaje entre la versión de
+  TypeScript resuelta ahora (5.9.3) y la que se usó al escribir ese código.
+  No introducido por los cambios de esta sesión (verificado con `git stash`),
+  pero conviene revisarlo aparte.
 
 ## Roadmap
 

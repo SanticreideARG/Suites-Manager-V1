@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api.js";
 import type { TarifaRegla } from "../../lib/api.js";
 import { Modal } from "../habitaciones/NuevaHabitacion.js";
+import { CatalogoCargos } from "./CatalogoCargos.js";
 
 function describeAjuste(r: TarifaRegla) {
   const factor = Number(r.factor);
@@ -158,6 +159,9 @@ export function TarifasPage() {
         )}
       </section>
 
+      {/* ── Catálogo de cargos y servicios ──────────────────────── */}
+      <CatalogoCargos />
+
       {creando && <ReglaForm onClose={() => setCreando(false)} />}
       {editar && <ReglaForm regla={editar} onClose={() => setEditar(null)} />}
     </div>
@@ -224,6 +228,9 @@ function ReglaForm({ regla, onClose }: { regla?: TarifaRegla; onClose: () => voi
   const [tipo, setTipo] = useState<"rango" | "finde">(regla?.tipo ?? "finde");
   const [desde, setDesde] = useState(regla?.desde ?? "");
   const [hasta, setHasta] = useState(regla?.hasta ?? "");
+  const [modo, setModo] = useState<"factor" | "monto">(
+    regla && Number(regla.monto ?? 0) !== 0 ? "monto" : "factor",
+  );
   const [factor, setFactor] = useState(Number(regla?.factor ?? 1));
   const [monto, setMonto] = useState(Number(regla?.monto ?? 0));
   const [prioridad, setPrioridad] = useState(regla?.prioridad ?? 0);
@@ -236,8 +243,8 @@ function ReglaForm({ regla, onClose }: { regla?: TarifaRegla; onClose: () => voi
         tipo,
         desde: tipo === "rango" ? desde : undefined,
         hasta: tipo === "rango" ? hasta : undefined,
-        factor,
-        monto,
+        factor: modo === "factor" ? factor : 1,
+        monto: modo === "monto" ? monto : 0,
         prioridad,
       };
       return regla
@@ -292,13 +299,35 @@ function ReglaForm({ regla, onClose }: { regla?: TarifaRegla; onClose: () => voi
         </div>
       )}
 
-      <div className="rounded-lg border border-slate-100 bg-slate-50 p-3 text-xs text-slate-500 dark:border-white/[0.06] dark:bg-white/[0.03] dark:text-white/40">
-        Precio/noche = base × factor{montoLabel}<br />
-        <span className="text-slate-400 dark:text-white/30">Factor 1 = sin cambio. Monto positivo = recargo; negativo = descuento.</span>
+      <div>
+        <span className="block text-sm text-slate-600 dark:text-white/70">Tipo de ajuste</span>
+        <p className="mt-0.5 text-xs text-slate-400 dark:text-white/30">
+          Una regla es de un solo tipo: coeficiente o monto fijo, no ambos a la vez.
+        </p>
+        <div className="mt-1.5 flex gap-1 rounded-lg bg-slate-100 p-0.5 w-fit dark:bg-white/[0.05]">
+          {(["factor", "monto"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => {
+                setModo(m);
+                if (m === "factor") setMonto(0);
+                else setFactor(1);
+              }}
+              className={`rounded px-3 py-1 text-sm font-medium transition-colors ${
+                modo === m
+                  ? "bg-white text-slate-800 shadow-sm dark:bg-white/10 dark:text-white"
+                  : "text-slate-500 hover:text-slate-700 dark:text-white/40 dark:hover:text-white/70"
+              }`}
+            >
+              {m === "factor" ? "Coeficiente (×)" : "Monto fijo ($)"}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="flex gap-3">
-        <label className="block flex-1 text-sm">
+      {modo === "factor" ? (
+        <label className="block text-sm">
           Factor <span className="text-slate-400 text-xs">({factorLabel})</span>
           <input
             type="number"
@@ -309,7 +338,8 @@ function ReglaForm({ regla, onClose }: { regla?: TarifaRegla; onClose: () => voi
             className={input}
           />
         </label>
-        <label className="block flex-1 text-sm">
+      ) : (
+        <label className="block text-sm">
           Monto fijo ($) <span className="text-slate-400 text-xs">(+ recargo / − descuento)</span>
           <input
             type="number"
@@ -319,6 +349,22 @@ function ReglaForm({ regla, onClose }: { regla?: TarifaRegla; onClose: () => voi
             className={input}
           />
         </label>
+      )}
+
+      <div className="rounded-lg border border-slate-100 bg-slate-50 p-3 text-xs text-slate-500 dark:border-white/[0.06] dark:bg-white/[0.03] dark:text-white/40">
+        {modo === "factor" ? (
+          <>
+            Precio/noche = base × factor
+            <br />
+            <span className="text-slate-400 dark:text-white/30">Factor 1 = sin cambio.</span>
+          </>
+        ) : (
+          <>
+            Precio/noche = base{montoLabel}
+            <br />
+            <span className="text-slate-400 dark:text-white/30">Monto positivo = recargo; negativo = descuento.</span>
+          </>
+        )}
       </div>
 
       <label className="block text-sm">

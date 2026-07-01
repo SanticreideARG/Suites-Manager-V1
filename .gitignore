@@ -11,3 +11,5 @@ coverage/
 
 # Build Output API de Vercel generada por build:vercel
 .vercel/
+.vercel
+.env*

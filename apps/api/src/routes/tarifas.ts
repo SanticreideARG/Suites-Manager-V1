@@ -43,6 +43,20 @@ tarifasRoutes.patch("/:id", zValidator("json", tarifaReglaUpdate), async (c) => 
   const id = Number(c.req.param("id"));
   const { factor, monto, ...resto } = c.req.valid("json");
   const [antes] = await db.select().from(tarifaReglas).where(eq(tarifaReglas.id, id));
+  if (!antes) return c.json({ error: "No encontrada" }, 404);
+
+  const factorFinal = factor ?? Number(antes.factor);
+  const montoFinal = monto ?? Number(antes.monto);
+  if (factorFinal !== 1 && montoFinal !== 0) {
+    return c.json(
+      {
+        error: "regla_no_excluyente",
+        message: "Una regla es de un solo tipo: coeficiente o monto fijo, no ambos.",
+      },
+      400,
+    );
+  }
+
   const [row] = await db
     .update(tarifaReglas)
     .set({

@@ -17,6 +17,7 @@ import { LandingManagerPage } from "./features/landing-manager/LandingManagerPag
 import { HousekeepingPage } from "./features/housekeeping/HousekeepingPage.js";
 import { ActividadPage } from "./features/actividad/ActividadPage.js";
 import { useSession, signOut } from "./lib/auth.js";
+import { MiCuenta } from "./features/auth/MiCuenta.js";
 import logo from "./assets/suites-man-logo.png";
 
 type Vista = "calendario" | "huespedes" | "housekeeping" | "reportes" | "tarifas" | "landing" | "config" | "actividad";
@@ -35,6 +36,7 @@ interface NavGroup {
 
 export function PanelApp() {
   const [vista, setVista] = useState<Vista>("calendario");
+  const [cuentaAbierta, setCuentaAbierta] = useState(false);
   const { tema, toggleTema } = useUi();
   const { data: session, isPending } = useSession();
   const configQ = useQuery({ queryKey: ["config"], queryFn: api.config.get });
@@ -109,6 +111,7 @@ export function PanelApp() {
           tema={tema}
           onToggleTema={toggleTema}
           onSignOut={session ? () => signOut() : undefined}
+          onMiCuenta={session ? () => setCuentaAbierta(true) : undefined}
         />
       </aside>
 
@@ -122,6 +125,11 @@ export function PanelApp() {
           <IconBtn onClick={toggleTema} title="Cambiar tema">
             {tema === "dark" ? "☀️" : "🌙"}
           </IconBtn>
+          {session && (
+            <IconBtn onClick={() => setCuentaAbierta(true)} title="Mi cuenta">
+              👤
+            </IconBtn>
+          )}
           {session && (
             <IconBtn onClick={() => signOut()} title="Salir">
               ⎋
@@ -167,6 +175,8 @@ export function PanelApp() {
         {vista === "actividad" && esAdmin && <ActividadPage />}
         {vista === "config" && esAdmin && <ConfiguracionPage />}
       </main>
+
+      {cuentaAbierta && <MiCuenta onClose={() => setCuentaAbierta(false)} />}
     </div>
   );
 }
@@ -216,11 +226,13 @@ function SidebarFooter({
   tema,
   onToggleTema,
   onSignOut,
+  onMiCuenta,
 }: {
   email?: string;
   tema: "light" | "dark";
   onToggleTema: () => void;
   onSignOut?: () => void;
+  onMiCuenta?: () => void;
 }) {
   return (
     <div className="border-t border-slate-200 p-3">
@@ -232,12 +244,20 @@ function SidebarFooter({
       </button>
       {email && (
         <div className="flex items-center gap-2 rounded-lg px-3 py-2">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-600">
+          <button
+            onClick={onMiCuenta}
+            title="Mi cuenta"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-300"
+          >
             {email.slice(0, 2).toUpperCase()}
-          </span>
-          <span className="min-w-0 flex-1 truncate text-xs text-slate-500">
+          </button>
+          <button
+            onClick={onMiCuenta}
+            title="Mi cuenta"
+            className="min-w-0 flex-1 truncate text-left text-xs text-slate-500 hover:text-slate-700"
+          >
             {email}
-          </span>
+          </button>
           {onSignOut && (
             <button
               onClick={onSignOut}

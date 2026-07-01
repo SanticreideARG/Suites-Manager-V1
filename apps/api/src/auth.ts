@@ -47,6 +47,12 @@ export const auth = betterAuth({
         input: false, // no se setea desde el cliente al registrarse
       },
     },
+    // Habilita /change-email (front pide la contraseña actual antes de llamarlo,
+    // ver MiCuenta.tsx — Better Auth no exige password en este endpoint).
+    changeEmail: { enabled: true },
+    // Habilita /delete-user. Se llama siempre con `password`, que Better Auth
+    // verifica server-side antes de borrar (re-auth incorporado).
+    deleteUser: { enabled: true },
   },
   // basePath default de Better Auth → el cliente funciona sin config extra.
   basePath: "/api/auth",

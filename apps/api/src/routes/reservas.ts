@@ -8,14 +8,17 @@ import {
   ne,
   db,
   sql,
+  drizzleSql,
   habitaciones,
   huespedes,
   reservas,
+  consumos,
   tareasHousekeeping,
   PG_EXCLUSION_VIOLATION,
 } from "@suites/db";
 import { reservaCreate, reservaUpdate, bloqueoCreate } from "@suites/shared";
 import { calcularTotal } from "../calcularTarifa.js";
+import { calcularCargoCancelacion } from "../calcularCancelacion.js";
 import { staff } from "../middleware/auth.js";
 import { logAudit, computeDiff, diffEliminar } from "../lib/audit.js";
 
@@ -188,6 +191,15 @@ reservasRoutes.get("/cotizar", async (c) => {
   return c.json({ habitacionId, checkin, checkout, noches, tarifaBase, total });
 });
 
+// Cotización del cargo por cancelación (según política vigente y días restantes).
+reservasRoutes.get("/:id/cotizar-cancelacion", async (c) => {
+  const id = Number(c.req.param("id"));
+  const [reserva] = await db.select().from(reservas).where(eq(reservas.id, id));
+  if (!reserva) return c.json({ error: "No encontrada" }, 404);
+  const cargo = await calcularCargoCancelacion(Number(reserva.total), reserva.checkin);
+  return c.json(cargo);
+});
+
 reservasRoutes.patch("/:id", zValidator("json", reservaUpdate), async (c) => {
   const id = Number(c.req.param("id"));
   const data = c.req.valid("json");
@@ -286,10 +298,51 @@ reservasRoutes.post("/:id/checkout", async (c) => {
 reservasRoutes.post("/:id/cancelar", async (c) => {
   const id = Number(c.req.param("id"));
   const [antes] = await db.select().from(reservas).where(eq(reservas.id, id));
-  const cambios = { estado: "cancelada" as const };
+  if (!antes) return c.json({ error: "No encontrada" }, 404);
+
+  let cargoMonto = 0;
+  let cargoPorcentaje = 0;
+
+  // Los bloqueos de mantenimiento (sin huésped) no tienen check-in/cargos/política.
+  if (antes.huespedId != null) {
+    if (antes.estado === "ocupada") {
+      const [{ cantidad }] = await db
+        .select({ cantidad: drizzleSql<number>`count(*)::int` })
+        .from(consumos)
+        .where(eq(consumos.reservaId, id));
+      if (cantidad > 0) {
+        return c.json(
+          {
+            error: "cancelacion_bloqueada",
+            message: "No se puede cancelar: la reserva ya hizo check-in y tiene cargos asociados.",
+          },
+          409,
+        );
+      }
+    }
+
+    const cargo = await calcularCargoCancelacion(Number(antes.total), antes.checkin);
+    cargoMonto = cargo.monto;
+    cargoPorcentaje = cargo.porcentaje;
+  }
+
+  if (cargoMonto > 0) {
+    await db.insert(consumos).values({
+      reservaId: id,
+      descripcion: `Cargo por cancelación (${cargoPorcentaje}%)`,
+      categoria: "cargos",
+      cantidad: "1",
+      precioUnit: String(cargoMonto),
+      subtotal: String(cargoMonto),
+    } as any);
+  }
+
   const [row] = await db
     .update(reservas)
-    .set(cambios)
+    .set({
+      estado: "cancelada",
+      ...(cargoMonto > 0 ? { total: drizzleSql`${reservas.total} + ${cargoMonto}` } : {}),
+    })
     .where(eq(reservas.id, id))
     .returning();
   if (!row) return c.json({ error: "No encontrada" }, 404);
@@ -298,7 +351,10 @@ reservasRoutes.post("/:id/cancelar", async (c) => {
     entidad: "reservas",
     entidadId: id,
     entidadLabel: `Reserva #${id} (${row.checkin} → ${row.checkout})`,
-    diff: { estado: { antes: antes?.estado ?? null, despues: "cancelada" } },
+    diff: {
+      estado: { antes: antes.estado, despues: "cancelada" },
+      ...(cargoMonto > 0 ? { cargoCancelacion: { antes: null, despues: cargoMonto } } : {}),
+    },
   });
   return c.json(row);
 });

@@ -138,6 +138,20 @@ export interface TarifaRegla {
   activa: boolean;
 }
 
+export interface PoliticaCancelacion {
+  id: number;
+  nombre: string;
+  diasMinimos: number;
+  porcentaje: string;
+  activa: boolean;
+}
+
+export interface CotizacionCancelacion {
+  diasRestantes: number;
+  porcentaje: number;
+  monto: number;
+}
+
 export interface LandingServicio {
   id: number;
   titulo: string;
@@ -274,13 +288,15 @@ export interface TareaHousekeeping {
   createdAt: string;
 }
 
+export type CategoriaCargo = "servicios" | "consumos" | "cargos" | "bonificaciones";
+
 export interface Servicio {
   id: number;
   nombre: string;
   descripcion: string | null;
   precio: string;
   unidad: string;
-  categoria: string | null;
+  categoria: CategoriaCargo;
   activo: boolean;
 }
 
@@ -289,6 +305,7 @@ export interface Consumo {
   reservaId: number;
   servicioId: number | null;
   descripcion: string;
+  categoria: CategoriaCargo;
   cantidad: string;
   precioUnit: string;
   subtotal: string;
@@ -309,6 +326,9 @@ export class ApiError extends Error {
   }
   get enUso() {
     return this.code === "en_uso";
+  }
+  get esCancelacionBloqueada() {
+    return this.code === "cancelacion_bloqueada";
   }
 }
 
@@ -331,6 +351,14 @@ export interface AuditLogPage {
   total: number;
   page: number;
   pageSize: number;
+}
+
+export interface AuditVerifyResult {
+  ok: boolean;
+  rotoEnId: number | null;
+  totalFilas: number;
+  filasVerificadas: number;
+  legacySinHash: number;
 }
 
 /** Forma común que cumplen tanto la API real como el mock. */
@@ -452,6 +480,12 @@ export interface ApiClient {
     create: (data: import("@suites/shared").ConsumoCreate) => Promise<Consumo>;
     remove: (id: number) => Promise<{ ok: true }>;
   };
+  politicasCancelacion: {
+    list: () => Promise<PoliticaCancelacion[]>;
+    create: (data: import("@suites/shared").PoliticaCancelacionCreate) => Promise<PoliticaCancelacion>;
+    update: (id: number, data: import("@suites/shared").PoliticaCancelacionUpdate) => Promise<PoliticaCancelacion>;
+    remove: (id: number) => Promise<{ ok: true }>;
+  };
   landingServicios: {
     list: () => Promise<LandingServicio[]>;
     create: (data: import("@suites/shared").LandingServicioCreate) => Promise<LandingServicio>;
@@ -484,6 +518,7 @@ export interface ApiClient {
     checkin: (id: number) => Promise<unknown>;
     checkout: (id: number) => Promise<unknown>;
     cancelar: (id: number) => Promise<unknown>;
+    cotizarCancelacion: (id: number) => Promise<CotizacionCancelacion>;
   };
   auditLog: {
     list: (params?: {
@@ -495,5 +530,6 @@ export interface ApiClient {
       q?: string;
       page?: number;
     }) => Promise<AuditLogPage>;
+    verify: () => Promise<AuditVerifyResult>;
   };
 }

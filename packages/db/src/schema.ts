@@ -294,13 +294,22 @@ export const tareasHousekeeping = pgTable("tareas_housekeeping", {
 export type TareaHousekeeping = typeof tareasHousekeeping.$inferSelect;
 
 // ---------- Servicios adicionales / Consumos ----------
+// Categorías fijas (decisión 2026-06-26): Servicios/Consumos/Cargos suman al
+// total; Bonificaciones resta.
+export const categoriaCargoEnum = pgEnum("categoria_cargo", [
+  "servicios",
+  "consumos",
+  "cargos",
+  "bonificaciones",
+]);
+
 export const servicios = pgTable("servicios", {
   id: serial("id").primaryKey(),
   nombre: varchar("nombre", { length: 120 }).notNull(),
   descripcion: text("descripcion"),
   precio: numeric("precio", { precision: 12, scale: 2 }).notNull().default("0"),
   unidad: varchar("unidad", { length: 40 }).notNull().default("unidad"),
-  categoria: varchar("categoria", { length: 60 }),
+  categoria: categoriaCargoEnum("categoria").notNull().default("servicios"),
   activo: boolean("activo").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -315,6 +324,7 @@ export const consumos = pgTable(
       .references(() => reservas.id),
     servicioId: integer("servicio_id").references(() => servicios.id),
     descripcion: varchar("descripcion", { length: 200 }).notNull(),
+    categoria: categoriaCargoEnum("categoria").notNull().default("servicios"),
     cantidad: numeric("cantidad", { precision: 8, scale: 2 }).notNull().default("1"),
     precioUnit: numeric("precio_unit", { precision: 12, scale: 2 }).notNull(),
     subtotal: numeric("subtotal", { precision: 12, scale: 2 }).notNull(),
@@ -361,6 +371,17 @@ export type LandingLink = typeof landingLinks.$inferSelect;
 export type LandingServicio = typeof landingServicios.$inferSelect;
 export type LandingContacto = typeof landingContactos.$inferSelect;
 
+// ---------- Políticas de cancelación ----------
+export const politicasCancelacion = pgTable("politicas_cancelacion", {
+  id: serial("id").primaryKey(),
+  nombre: varchar("nombre", { length: 120 }).notNull(),
+  diasMinimos: integer("dias_minimos").notNull().default(0),
+  porcentaje: numeric("porcentaje", { precision: 5, scale: 2 }).notNull().default("0"),
+  activa: boolean("activa").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+export type PoliticaCancelacion = typeof politicasCancelacion.$inferSelect;
+
 // ---------- Audit Log ----------
 export const auditLog = pgTable("audit_log", {
   id:           serial("id").primaryKey(),
@@ -374,5 +395,7 @@ export const auditLog = pgTable("audit_log", {
   entidadLabel: text("entidad_label"),
   diff:         text("diff"),  // JSON stringificado — evita import jsonb en esbuild
   ip:           text("ip"),
+  hash:         text("hash"),           // sha256(hashAnterior + datos de la fila)
+  hashAnterior: text("hash_anterior"),  // hash de la fila previa (cadena tamper-evident)
 });
 export type AuditLogEntry = typeof auditLog.$inferSelect;

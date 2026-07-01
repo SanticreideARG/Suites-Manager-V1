@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api.js";
-import type { AuditLogEntry } from "../../lib/types.js";
+import type { AuditLogEntry, AuditVerifyResult } from "../../lib/types.js";
 
 const ENTIDADES = ["reservas", "huespedes", "habitaciones", "pagos", "tarifas", "usuarios"];
 const ACCIONES = ["crear", "editar", "eliminar"] as const;
@@ -27,6 +27,12 @@ export function ActividadPage() {
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [verificacion, setVerificacion] = useState<AuditVerifyResult | null>(null);
+
+  const verificar = useMutation({
+    mutationFn: () => api.auditLog.verify(),
+    onSuccess: setVerificacion,
+  });
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["audit-log", { userId, entidad, accion, desde, hasta, q, page }],
@@ -68,6 +74,40 @@ export function ActividadPage() {
 
   return (
     <div className="space-y-4">
+      {/* Integridad de la cadena de hashes */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Registro de actividad</h2>
+          <p className="text-xs text-slate-400">
+            Cada acción queda encadenada por hash (sha256) a la anterior — un cambio directo en la
+            base rompería la cadena.
+          </p>
+        </div>
+        <button
+          onClick={() => verificar.mutate()}
+          disabled={verificar.isPending}
+          className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
+        >
+          {verificar.isPending ? "Verificando…" : "🔒 Verificar integridad"}
+        </button>
+      </div>
+
+      {verificacion && (
+        <div
+          className={`rounded-lg border px-4 py-2.5 text-sm ${
+            verificacion.ok
+              ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-900/20 dark:text-emerald-400"
+              : "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/40 dark:bg-rose-900/20 dark:text-rose-400"
+          }`}
+        >
+          {verificacion.ok
+            ? `✓ Cadena íntegra: ${verificacion.filasVerificadas} filas verificadas${
+                verificacion.legacySinHash > 0 ? ` (${verificacion.legacySinHash} anteriores al hash, no verificables)` : ""
+              }.`
+            : `⚠️ Cadena rota en la fila #${verificacion.rotoEnId} — posible edición o borrado directo en la base.`}
+        </div>
+      )}
+
       {/* Filtros */}
       <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
         <div className="flex flex-wrap gap-3">

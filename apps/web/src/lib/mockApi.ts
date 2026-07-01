@@ -27,6 +27,7 @@ import type {
   LandingContacto,
   AuditLogEntry,
   AuditLogPage,
+  PoliticaCancelacion,
 } from "./types.js";
 import { ApiError } from "./types.js";
 import { addDays, diffDays } from "./fechas.js";
@@ -193,16 +194,44 @@ const pagosMock: PagoRegistrado[] = [];
 // ---- Servicios adicionales / Consumos (mock) ----
 let seqServicio = 0;
 const serviciosMock: Servicio[] = [
-  { id: ++seqServicio, nombre: "Desayuno continental", descripcion: null, precio: "1500.00", unidad: "persona", categoria: "comida", activo: true },
-  { id: ++seqServicio, nombre: "Almuerzo", descripcion: null, precio: "2500.00", unidad: "persona", categoria: "comida", activo: true },
-  { id: ++seqServicio, nombre: "Cena", descripcion: null, precio: "3000.00", unidad: "persona", categoria: "comida", activo: true },
-  { id: ++seqServicio, nombre: "Transfer aeropuerto", descripcion: null, precio: "8000.00", unidad: "unidad", categoria: "transporte", activo: true },
-  { id: ++seqServicio, nombre: "Lavandería", descripcion: null, precio: "1200.00", unidad: "kg", categoria: "lavanderia", activo: true },
-  { id: ++seqServicio, nombre: "Late check-out (por hora)", descripcion: null, precio: "2000.00", unidad: "hora", categoria: "alojamiento", activo: true },
+  { id: ++seqServicio, nombre: "Desayuno continental", descripcion: null, precio: "1500.00", unidad: "persona", categoria: "consumos", activo: true },
+  { id: ++seqServicio, nombre: "Almuerzo", descripcion: null, precio: "2500.00", unidad: "persona", categoria: "consumos", activo: true },
+  { id: ++seqServicio, nombre: "Cena", descripcion: null, precio: "3000.00", unidad: "persona", categoria: "consumos", activo: true },
+  { id: ++seqServicio, nombre: "Transfer aeropuerto", descripcion: null, precio: "8000.00", unidad: "unidad", categoria: "servicios", activo: true },
+  { id: ++seqServicio, nombre: "Lavandería", descripcion: null, precio: "1200.00", unidad: "kg", categoria: "servicios", activo: true },
+  { id: ++seqServicio, nombre: "Late check-out (por hora)", descripcion: null, precio: "2000.00", unidad: "hora", categoria: "cargos", activo: true },
+  { id: ++seqServicio, nombre: "Descuento fidelidad", descripcion: null, precio: "1000.00", unidad: "unidad", categoria: "bonificaciones", activo: true },
 ];
 
 let seqConsumo = 0;
 const consumosMock: Consumo[] = [];
+
+// ---- Políticas de cancelación (mock) ----
+let seqPolitica = 0;
+const politicasCancelacionMock: PoliticaCancelacion[] = [];
+
+function cargoCancelacionMock(
+  total: number,
+  checkin: string,
+): { diasRestantes: number; porcentaje: number; monto: number } {
+  const diasRestantes = diffDays(hoy, checkin);
+  const activas = politicasCancelacionMock.filter((p) => p.activa);
+
+  let mejor: PoliticaCancelacion | null = null;
+  for (const p of activas) {
+    if (p.diasMinimos > diasRestantes) continue;
+    if (!mejor || p.diasMinimos > mejor.diasMinimos) mejor = p;
+  }
+  // Si ninguna calificó (diasRestantes por debajo de todos los umbrales, ej.
+  // checkin ya pasado), la de menor diasMinimos actúa como piso.
+  if (!mejor && activas.length > 0) {
+    mejor = activas.reduce((min, p) => (p.diasMinimos < min.diasMinimos ? p : min));
+  }
+
+  const porcentaje = mejor ? Number(mejor.porcentaje) : 0;
+  const monto = Math.round(total * (porcentaje / 100) * 100) / 100;
+  return { diasRestantes, porcentaje, monto };
+}
 
 // ---- Housekeeping (mock) ----
 let seqHK = 0;
@@ -790,7 +819,7 @@ export const mockApi: ApiClient = {
         descripcion: data.descripcion ?? null,
         precio: String(data.precio),
         unidad: data.unidad ?? "unidad",
-        categoria: data.categoria ?? null,
+        categoria: data.categoria ?? "servicios",
         activo: data.activo ?? true,
       };
       serviciosMock.push(s);
@@ -803,7 +832,7 @@ export const mockApi: ApiClient = {
       if (data.descripcion !== undefined) s.descripcion = data.descripcion ?? null;
       if (data.precio !== undefined) s.precio = String(data.precio);
       if (data.unidad !== undefined) s.unidad = data.unidad;
-      if (data.categoria !== undefined) s.categoria = data.categoria ?? null;
+      if (data.categoria !== undefined) s.categoria = data.categoria;
       if (data.activo !== undefined) s.activo = data.activo;
       return delay({ ...s });
     },
@@ -821,11 +850,14 @@ export const mockApi: ApiClient = {
       if (!r) return Promise.reject(new ApiError(404, "Reserva inexistente"));
       const cantidad = data.cantidad ?? 1;
       const subtotal = Math.round(cantidad * data.precioUnit * 100) / 100;
+      const categoria = data.categoria ?? "servicios";
+      const efecto = categoria === "bonificaciones" ? -subtotal : subtotal;
       const c: Consumo = {
         id: ++seqConsumo,
         reservaId: data.reservaId,
         servicioId: data.servicioId ?? null,
         descripcion: data.descripcion,
+        categoria,
         cantidad: String(cantidad),
         precioUnit: String(data.precioUnit),
         subtotal: String(subtotal),
@@ -833,7 +865,7 @@ export const mockApi: ApiClient = {
         notas: data.notas ?? null,
       };
       consumosMock.push(c);
-      r.total = String(Number(r.total) + subtotal);
+      r.total = String(Number(r.total) + efecto);
       return delay(c);
     },
     remove: (id) => {
@@ -841,7 +873,8 @@ export const mockApi: ApiClient = {
       if (i === -1) return Promise.reject(new ApiError(404, "No encontrado"));
       const [c] = consumosMock.splice(i, 1) as [Consumo];
       const r = reservas.find((x) => x.id === c.reservaId);
-      if (r) r.total = String(Number(r.total) - Number(c.subtotal));
+      const efecto = c.categoria === "bonificaciones" ? Number(c.subtotal) : -Number(c.subtotal);
+      if (r) r.total = String(Number(r.total) + efecto);
       return delay({ ok: true } as const);
     },
   },
@@ -1146,8 +1179,74 @@ export const mockApi: ApiClient = {
     },
     cancelar: (id) => {
       const r = reservas.find((x) => x.id === id);
-      if (r) r.estado = "cancelada";
+      if (!r) return Promise.reject(new ApiError(404, "No encontrada"));
+
+      if (r.huespedId != null) {
+        if (r.estado === "ocupada") {
+          const tieneCargos = consumosMock.some((c) => c.reservaId === id);
+          if (tieneCargos) {
+            return Promise.reject(
+              new ApiError(
+                409,
+                "No se puede cancelar: la reserva ya hizo check-in y tiene cargos asociados.",
+                "cancelacion_bloqueada",
+              ),
+            );
+          }
+        }
+        const { porcentaje, monto } = cargoCancelacionMock(Number(r.total), r.checkin);
+        if (monto > 0) {
+          const c: Consumo = {
+            id: ++seqConsumo,
+            reservaId: id,
+            servicioId: null,
+            descripcion: `Cargo por cancelación (${porcentaje}%)`,
+            categoria: "cargos",
+            cantidad: "1",
+            precioUnit: String(monto),
+            subtotal: String(monto),
+            fecha: new Date().toISOString(),
+            notas: null,
+          };
+          consumosMock.push(c);
+          r.total = String(Number(r.total) + monto);
+        }
+      }
+      r.estado = "cancelada";
       return delay(r);
+    },
+    cotizarCancelacion: (id) => {
+      const r = reservas.find((x) => x.id === id);
+      if (!r) return Promise.reject(new ApiError(404, "No encontrada"));
+      return delay(cargoCancelacionMock(Number(r.total), r.checkin));
+    },
+  },
+  politicasCancelacion: {
+    list: () => delay([...politicasCancelacionMock].sort((a, b) => b.diasMinimos - a.diasMinimos)),
+    create: (data) => {
+      const p: PoliticaCancelacion = {
+        id: ++seqPolitica,
+        nombre: data.nombre,
+        diasMinimos: data.diasMinimos,
+        porcentaje: String(data.porcentaje),
+        activa: data.activa ?? true,
+      };
+      politicasCancelacionMock.push(p);
+      return delay(p);
+    },
+    update: (id, data) => {
+      const p = politicasCancelacionMock.find((x) => x.id === id);
+      if (!p) return Promise.reject(new ApiError(404, "No encontrada"));
+      if (data.nombre !== undefined) p.nombre = data.nombre;
+      if (data.diasMinimos !== undefined) p.diasMinimos = data.diasMinimos;
+      if (data.porcentaje !== undefined) p.porcentaje = String(data.porcentaje);
+      if (data.activa !== undefined) p.activa = data.activa;
+      return delay({ ...p });
+    },
+    remove: (id) => {
+      const i = politicasCancelacionMock.findIndex((x) => x.id === id);
+      if (i >= 0) politicasCancelacionMock.splice(i, 1);
+      return delay({ ok: true } as const);
     },
   },
   auditLog: {
@@ -1177,5 +1276,7 @@ export const mockApi: ApiClient = {
       };
       return delay(result);
     },
+    verify: () =>
+      delay({ ok: true, rotoEnId: null, totalFilas: 3, filasVerificadas: 3, legacySinHash: 0 }),
   },
 };
